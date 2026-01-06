@@ -1,107 +1,151 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>體感溫度計算機</title>
+
   <style>
-    body { font-family: Arial; padding: 20px; max-width: 500px; margin: auto; }
-    input, select { width: 100%; margin-bottom: 10px; padding: 5px; }
-    button { width: 100%; padding: 10px; margin-top: 10px; }
-    #result { margin-top: 20px; font-weight: bold; }
-    #method { margin-top: 5px; font-style: italic; color: #555; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI";
+      background-color: #000;
+      color: #fff;
+    }
+
+    .container {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #ffd400;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-size: 1.1rem;
+      margin-top: 14px;
+      display: block;
+    }
+
+    input, select, button {
+      width: 100%;
+      font-size: 1.1rem;
+      padding: 12px;
+      margin-top: 6px;
+      border-radius: 8px;
+      border: none;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #ffd400;
+      color: #000;
+      font-weight: bold;
+      margin-top: 24px;
+      cursor: pointer;
+    }
+
+    .result {
+      color: #00ff88;
+      font-size: 1.6rem;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 24px;
+    }
+
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
   </style>
 </head>
+
 <body>
-  <h2>體感溫度計算機</h2>
+  <div class="container">
+    <h1>體感溫度計算機</h1>
 
-  <label>氣溫 (°C): <input type="number" id="temperature" value="14"></label>
+    <label>氣溫（°C）</label>
+    <input id="temp" type="number" step="0.1" placeholder="例如 14.0">
 
-  <!-- 平均風速 -->
-  <label>平均風速輸入方式:</label>
-  <select id="wind_option" onchange="toggleWindInputs('wind')">
-    <option value="ms">米/秒 (m/s)</option>
-    <option value="beaufort">蒲式風級 (B級)</option>
-  </select>
-  <div id="wind_ms_div">
-    <label>平均風速 (m/s): <input type="number" id="wind_avg" value="6.7"></label>
+    <label>相對濕度（%）</label>
+    <input id="humidity" type="number" step="1" placeholder="例如 72">
+
+    <label>風速</label>
+    <input id="wind" type="number" step="0.1" placeholder="例如 6.7">
+    <select id="windUnit">
+      <option value="ms">m/s</option>
+      <option value="beaufort">蒲式風級</option>
+    </select>
+
+    <label>陣風（可不填）</label>
+    <input id="gust" type="number" step="0.1" placeholder="例如 12.8 或留空">
+    <select id="gustUnit">
+      <option value="ms">m/s</option>
+      <option value="beaufort">蒲式風級</option>
+    </select>
+
+    <button onclick="calculate()">計算體感溫度</button>
+
+    <div class="result" id="result"></div>
+
+    <footer>製作人：夜ゞ無尾熊</footer>
   </div>
-  <div id="wind_beaufort_div" style="display:none;">
-    <label>蒲式風級 (0~17): <input type="number" id="wind_beaufort" value="4" min="0" max="17"></label>
-  </div>
-
-  <!-- 陣風 -->
-  <label>陣風輸入方式:</label>
-  <select id="gust_option" onchange="toggleWindInputs('gust')">
-    <option value="ms">米/秒 (m/s)</option>
-    <option value="beaufort">蒲式風級 (B級)</option>
-  </select>
-  <div id="gust_ms_div">
-    <label>陣風 (m/s, 留空或0表示不使用): <input type="number" id="wind_gust" value="0"></label>
-  </div>
-  <div id="gust_beaufort_div" style="display:none;">
-    <label>蒲式風級 (0~17, 留空或0表示不使用): <input type="number" id="gust_beaufort" value="0" min="0" max="17"></label>
-  </div>
-
-  <label>相對濕度 (%): <input type="number" id="humidity" value="72"></label>
-
-  <button onclick="calculateAT()">計算體感溫度</button>
-  <div id="result"></div>
-  <div id="method"></div>
 
   <script>
-    function toggleWindInputs(type) {
-      if(type === 'wind'){
-        const option = document.getElementById('wind_option').value;
-        document.getElementById('wind_ms_div').style.display = (option === 'ms') ? 'block' : 'none';
-        document.getElementById('wind_beaufort_div').style.display = (option === 'beaufort') ? 'block' : 'none';
-      } else if(type === 'gust'){
-        const option = document.getElementById('gust_option').value;
-        document.getElementById('gust_ms_div').style.display = (option === 'ms') ? 'block' : 'none';
-        document.getElementById('gust_beaufort_div').style.display = (option === 'beaufort') ? 'block' : 'none';
-      }
+    function beaufortToMs(b) {
+      return 0.836 * Math.pow(b, 1.5);
     }
 
-    function getWindSpeed(optionId, msId, beaufortId){
-      const option = document.getElementById(optionId).value;
-      let speed;
-      if(option === 'ms'){
-        speed = parseFloat(document.getElementById(msId).value || 0);
-      } else {
-        let B = parseInt(document.getElementById(beaufortId).value || 0);
-        if(B < 0) B = 0;
-        if(B > 17) B = 17;
-        speed = 0.836 * Math.pow(B, 1.5);
-      }
-      return speed;
-    }
+    function calculate() {
+      const T = parseFloat(document.getElementById("temp").value);
+      const H = parseFloat(document.getElementById("humidity").value);
+      let V = parseFloat(document.getElementById("wind").value);
+      let G = parseFloat(document.getElementById("gust").value);
 
-    function calculateAT() {
-      const T = parseFloat(document.getElementById('temperature').value);
-      const V_avg = getWindSpeed('wind_option','wind_avg','wind_beaufort');
-      const V_gust = getWindSpeed('gust_option','wind_gust','gust_beaufort');
-      const RH = parseFloat(document.getElementById('humidity').value);
+      const windUnit = document.getElementById("windUnit").value;
+      const gustUnit = document.getElementById("gustUnit").value;
 
-      // 計算水氣壓 e (hPa)
-      const e = (RH / 100) * 6.105 * Math.exp(17.27 * T / (237.7 + T));
-
-      let AT;
-      let methodText;
-
-      // 判斷是否使用陣風
-      if(V_gust && V_gust > 0){
-        const V_effective = 0.7 * V_avg + 0.3 * V_gust;
-        AT = T + 0.33 * e - 0.70 * V_effective - 4;
-        methodText = "計算方式：含陣風加權公式 (0.7×平均風速 + 0.3×陣風)";
-      } else {
-        AT = T + 0.33 * e - 0.70 * V_avg - 4;
-        methodText = "計算方式：只使用平均風速";
+      if (isNaN(T) || isNaN(H) || isNaN(V)) {
+        document.getElementById("result").textContent = "請填寫氣溫、濕度與風速";
+        return;
       }
 
-      // 四捨五入到小數點第一位
-      AT = Math.round(AT * 10) / 10;
+      if (windUnit === "beaufort") {
+        V = beaufortToMs(V);
+      }
 
-      document.getElementById('result').innerText = `體感溫度 ≈ ${AT} °C`;
-      document.getElementById('method').innerText = methodText;
+      let useGust = !isNaN(G) && G > 0;
+
+      if (useGust && gustUnit === "beaufort") {
+        G = beaufortToMs(G);
+      }
+
+      // 基礎體感溫度（簡化風寒 + 濕度修正）
+      let apparentTemp;
+
+      if (useGust) {
+        const effectiveWind = (V + G) / 2;
+        apparentTemp =
+          T
+          - 0.7 * effectiveWind
+          - 0.2 * (H / 100) * (T - 10);
+      } else {
+        apparentTemp =
+          T
+          - 0.7 * V
+          - 0.2 * (H / 100) * (T - 10);
+      }
+
+      apparentTemp = Math.round(apparentTemp * 10) / 10;
+
+      document.getElementById("result").textContent =
+        `體感溫度：約 ${apparentTemp} °C`;
     }
   </script>
 </body>
