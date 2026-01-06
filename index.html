@@ -48,6 +48,12 @@
     color: #00FF00;
     text-align: center;
   }
+  #note {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #888;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
@@ -81,7 +87,33 @@
 
 <div id="result"></div>
 
+<p id="note">體感溫度僅供參考，實際感受因個人體質、衣著、活動量、日照及風向而有所差異</p>
+
 <script>
+/*
+公式註解：
+1. 風速轉換：
+   - m/s → m/s : 直接使用
+   - km/h → m/s : 除以 3.6
+   - kt → m/s : 乘以 0.514444
+   - 蒲式風級 → m/s : V = 0.836 * B^(3/2)
+
+2. 低溫風寒公式 (T <= 15°C)：
+   T_cold = T - 0.7 * V_eff - 0.2 * (H/100) * (T - 10)
+   - V_eff = (風速 + 陣風平均) 或只用風速 (若未填陣風)
+   - 考慮濕度影響
+
+3. 高溫公式 (T >= 27°C)：
+   Heat Index (簡化版)：
+   T_high = T + 0.33 * (H/100) * T
+
+4. 線性過渡區 (15°C < T < 27°C)：
+   T_apparent = w_cold * T_cold + (1 - w_cold) * T_high
+   w_cold = (27 - T) / (27 - 15)
+
+5. 最終結果四捨五入到小數點第一位
+*/
+
 function beaufortToMs(B) {
   return 0.836 * Math.pow(B, 1.5);
 }
@@ -96,7 +128,6 @@ function windToMs(value, unit) {
   }
 }
 
-// 高溫濕熱公式 (簡化 Heat Index)
 function heatIndex(T, H) {
   return T + 0.33 * (H / 100) * T;
 }
@@ -115,39 +146,33 @@ function calculate() {
     return;
   }
 
-  // 轉 m/s
   V = windToMs(V, windUnit);
   let useGust = !isNaN(G) && G > 0;
   if (useGust) {
     G = windToMs(G, gustUnit);
   }
 
-  // 風寒公式
   let effectiveWind = useGust ? (V + G) / 2 : V;
   let T_cold = T - 0.7 * effectiveWind - 0.2 * (H / 100) * (T - 10);
 
   let T_apparent;
 
   if (T <= 15) {
-    // 低溫公式
     T_apparent = T_cold;
   } else if (T >= 27) {
-    // 高溫公式
     T_apparent = heatIndex(T, H);
   } else {
-    // 線性過渡公式
     let T_high = heatIndex(T, H);
-    let w_cold = (27 - T) / (27 - 15); // 15~27°C 線性過渡
+    let w_cold = (27 - T) / (27 - 15);
     T_apparent = w_cold * T_cold + (1 - w_cold) * T_high;
   }
 
-  // 四捨五入到小數點第一位
   T_apparent = Math.round(T_apparent * 10) / 10;
 
   document.getElementById("result").textContent = `體感溫度：約 ${T_apparent} °C`;
 }
 </script>
 
-<p style="margin-top: 40px; color:#888; text-align:center;">製作人：夜ゞ無尾熊</p>
+<p id="note">製作人：夜ゞ無尾熊</p>
 </body>
 </html>
