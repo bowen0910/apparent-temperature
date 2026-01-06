@@ -1,197 +1,153 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>體感溫度計算機</title>
-
-  <style>
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI";
-      background-color: #000;
-      color: #fff;
-    }
-
-    .container {
-      max-width: 420px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    h1 {
-      color: #ffd400;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    label {
-      font-size: 1.1rem;
-      margin-top: 14px;
-      display: block;
-    }
-
-    input, select, button {
-      width: 100%;
-      font-size: 1.1rem;
-      padding: 12px;
-      margin-top: 6px;
-      border-radius: 8px;
-      border: none;
-      box-sizing: border-box;
-      background-color: #111;
-      color: #fff;
-    }
-
-    input:focus, select:focus {
-      outline: none;
-    }
-
-    button {
-      background-color: #ffd400;
-      color: #000;
-      font-weight: bold;
-      margin-top: 24px;
-      cursor: pointer;
-    }
-
-    .result {
-      color: #00ff88;
-      font-size: 1.6rem;
-      font-weight: bold;
-      text-align: center;
-      margin-top: 24px;
-    }
-
-    .info {
-      text-align: center;
-      margin-top: 12px;
-      display: none;
-    }
-
-    .info-icon {
-      cursor: pointer;
-      font-size: 1.2rem;
-      color: #bbb;
-    }
-
-    .note {
-      display: none;
-      margin-top: 8px;
-      font-size: 0.85rem;
-      color: #bbb;
-      line-height: 1.4;
-    }
-
-    footer {
-      margin-top: 40px;
-      text-align: center;
-      font-size: 0.9rem;
-      color: #aaa;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>體感溫度計算機</title>
+<style>
+  body {
+    background-color: #000;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    padding: 20px;
+  }
+  h1 {
+    color: #FFD700;
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  label {
+    display: block;
+    margin-top: 10px;
+  }
+  input, select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    border: none;
+    font-size: 16px;
+  }
+  button {
+    background-color: #444;
+    color: #fff;
+    padding: 10px;
+    width: 100%;
+    font-size: 18px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #666;
+  }
+  #result {
+    margin-top: 20px;
+    font-size: 24px;
+    color: #00FF00;
+    text-align: center;
+  }
+</style>
 </head>
-
 <body>
-  <div class="container">
-    <h1>體感溫度計算機</h1>
+<h1>體感溫度計算機</h1>
 
-    <label>氣溫（°C）</label>
-    <input id="temp" type="number" step="0.1">
+<label>氣溫 (°C):</label>
+<input type="number" id="temp" placeholder="請輸入氣溫">
 
-    <label>相對濕度（%）</label>
-    <input id="humidity" type="number" step="1">
+<label>濕度 (%):</label>
+<input type="number" id="humidity" placeholder="請輸入濕度">
 
-    <label>風速</label>
-    <input id="wind" type="number" step="0.1">
-    <select id="windUnit">
-      <option value="ms">m/s</option>
-      <option value="kmh">km/h</option>
-      <option value="kt">節 (kt)</option>
-      <option value="beaufort">蒲式風級</option>
-    </select>
+<label>風速:</label>
+<input type="number" id="wind" placeholder="請輸入風速">
+<select id="windUnit">
+  <option value="ms">m/s</option>
+  <option value="kmh">km/h</option>
+  <option value="kt">節 (kt)</option>
+  <option value="beaufort">蒲式風級</option>
+</select>
 
-    <label>陣風（可不填）</label>
-    <input id="gust" type="number" step="0.1">
-    <select id="gustUnit">
-      <option value="ms">m/s</option>
-      <option value="kmh">km/h</option>
-      <option value="kt">節 (kt)</option>
-      <option value="beaufort">蒲式風級</option>
-    </select>
+<label>陣風 (可選):</label>
+<input type="number" id="gust" placeholder="如有請輸入陣風，無則留空或填0">
+<select id="gustUnit">
+  <option value="ms">m/s</option>
+  <option value="kmh">km/h</option>
+  <option value="kt">節 (kt)</option>
+  <option value="beaufort">蒲式風級</option>
+</select>
 
-    <button onclick="calculate()">計算體感溫度</button>
+<button onclick="calculate()">計算體感溫度</button>
 
-    <div class="result" id="result"></div>
+<div id="result"></div>
 
-    <div class="info" id="info">
-      <span class="info-icon" onclick="toggleNote()">ℹ️</span>
-      <div class="note" id="note">
-        體感溫度為依風速與濕度估算之人體熱感受，可能高於或低於實際氣溫。
-      </div>
-    </div>
+<script>
+function beaufortToMs(B) {
+  return 0.836 * Math.pow(B, 1.5);
+}
 
-    <footer>製作人：夜ゞ無尾熊</footer>
-  </div>
+function windToMs(value, unit) {
+  switch (unit) {
+    case "ms": return value;
+    case "kmh": return value / 3.6;
+    case "kt": return value * 0.514444;
+    case "beaufort": return beaufortToMs(value);
+    default: return value;
+  }
+}
 
-  <script>
-    // 蒲式風級轉 m/s
-    function beaufortToMs(B) {
-      return 0.836 * Math.pow(B, 1.5);
-    }
+// 高溫濕熱公式 (簡化 Heat Index)
+function heatIndex(T, H) {
+  return T + 0.33 * (H / 100) * T;
+}
 
-    // 統一轉換各種單位到 m/s
-    function windToMs(value, unit) {
-      switch (unit) {
-        case "ms": return value;
-        case "kmh": return value / 3.6;
-        case "kt": return value * 0.514444;
-        case "beaufort": return beaufortToMs(value);
-        default: return value;
-      }
-    }
+function calculate() {
+  const T = parseFloat(document.getElementById("temp").value);
+  const H = parseFloat(document.getElementById("humidity").value);
+  let V = parseFloat(document.getElementById("wind").value);
+  let G = parseFloat(document.getElementById("gust").value);
 
-    function calculate() {
-      const T = parseFloat(document.getElementById("temp").value);
-      const H = parseFloat(document.getElementById("humidity").value);
-      let V = parseFloat(document.getElementById("wind").value);
-      let G = parseFloat(document.getElementById("gust").value);
+  const windUnit = document.getElementById("windUnit").value;
+  const gustUnit = document.getElementById("gustUnit").value;
 
-      const windUnit = document.getElementById("windUnit").value;
-      const gustUnit = document.getElementById("gustUnit").value;
+  if (isNaN(T) || isNaN(H) || isNaN(V)) {
+    document.getElementById("result").textContent = "請填寫氣溫、濕度與風速";
+    return;
+  }
 
-      if (isNaN(T) || isNaN(H) || isNaN(V)) {
-        document.getElementById("result").textContent = "請填寫氣溫、濕度與風速";
-        return;
-      }
+  // 轉 m/s
+  V = windToMs(V, windUnit);
+  let useGust = !isNaN(G) && G > 0;
+  if (useGust) {
+    G = windToMs(G, gustUnit);
+  }
 
-      // 轉 m/s
-      V = windToMs(V, windUnit);
-      let useGust = !isNaN(G) && G > 0;
-      if (useGust) {
-        G = windToMs(G, gustUnit);
-      }
+  // 風寒公式
+  let effectiveWind = useGust ? (V + G) / 2 : V;
+  let T_cold = T - 0.7 * effectiveWind - 0.2 * (H / 100) * (T - 10);
 
-      // 體感溫度計算
-      let apparentTemp;
-      if (useGust) {
-        const effectiveWind = (V + G) / 2;
-        apparentTemp = T - 0.7 * effectiveWind - 0.2 * (H / 100) * (T - 10);
-      } else {
-        apparentTemp = T - 0.7 * V - 0.2 * (H / 100) * (T - 10);
-      }
-      apparentTemp = Math.round(apparentTemp * 10) / 10;
+  let T_apparent;
 
-      document.getElementById("result").textContent = `體感溫度：約 ${apparentTemp} °C`;
+  if (T <= 15) {
+    // 低溫公式
+    T_apparent = T_cold;
+  } else if (T >= 27) {
+    // 高溫公式
+    T_apparent = heatIndex(T, H);
+  } else {
+    // 線性過渡公式
+    let T_high = heatIndex(T, H);
+    let w_cold = (27 - T) / (27 - 15); // 15~27°C 線性過渡
+    T_apparent = w_cold * T_cold + (1 - w_cold) * T_high;
+  }
 
-      // 顯示 ℹ️ 說明
-      document.getElementById("info").style.display = "block";
-    }
+  // 四捨五入到小數點第一位
+  T_apparent = Math.round(T_apparent * 10) / 10;
 
-    function toggleNote() {
-      const note = document.getElementById("note");
-      note.style.display = note.style.display === "none" ? "block" : "none";
-    }
-  </script>
+  document.getElementById("result").textContent = `體感溫度：約 ${T_apparent} °C`;
+}
+</script>
+
+<p style="margin-top: 40px; color:#888; text-align:center;">製作人：夜ゞ無尾熊</p>
 </body>
 </html>
