@@ -5,149 +5,217 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>體感溫度計算機</title>
 <style>
-  body {
-    background-color: #000;
-    color: #fff;
-    font-family: Arial, sans-serif;
-    padding: 20px;
-  }
-  h1 {
-    color: #FFD700;
-    text-align: center;
-    margin-bottom: 30px;
-  }
-  label {
-    display: block;
-    margin-top: 10px;
-  }
-  input, select {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    border: none;
-    font-size: 16px;
-  }
-  button {
-    background-color: #444;
-    color: #fff;
-    padding: 10px;
-    width: 100%;
-    font-size: 18px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  button:hover {
-    background-color: #666;
-  }
-  #result {
-    margin-top: 20px;
-    font-size: 24px;
-    color: #00FF00;
-    text-align: center;
-  }
+    /* 全域樣式 */
+    body {
+        background-color: black;
+        color: white;
+        font-family: Arial, sans-serif;
+        padding: 15px;
+        margin: 0;
+    }
+
+    h1 {
+        color: yellow;
+        text-align: center;
+        font-size: 2em;
+        margin-bottom: 15px;
+    }
+
+    label {
+        display: block;
+        margin-top: 15px;
+        font-size: 1.1em;
+    }
+
+    input, select {
+        width: 100%;
+        max-width: 450px;
+        padding: 12px;
+        font-size: 1em;
+        border-radius: 6px;
+        border: none;
+        margin-top: 5px;
+        box-sizing: border-box;
+    }
+
+    button {
+        margin-top: 20px;
+        padding: 14px;
+        width: 100%;
+        max-width: 450px;
+        font-size: 1.2em;
+        border-radius: 6px;
+        border: none;
+        background-color: yellow;
+        color: black;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #ffc107;
+    }
+
+    .result {
+        color: lime;
+        font-weight: bold;
+        font-size: 1.6em;
+        margin-top: 20px;
+        word-wrap: break-word;
+    }
+
+    .footer {
+        margin-top: 30px;
+        font-size: 0.95em;
+        color: #ccc;
+        line-height: 1.5em;
+    }
+
+    .formula {
+        color: #aaa;
+        margin-top: 8px;
+    }
+
+    /* 手機優化 */
+    @media (max-width: 480px) {
+        h1 { font-size: 1.8em; }
+        input, select, button { font-size: 1.1em; padding: 14px; }
+        .result { font-size: 1.5em; }
+    }
 </style>
 </head>
 <body>
+
 <h1>體感溫度計算機</h1>
+<p>製作人：夜ゞ無尾熊</p>
 
-<label>氣溫 (°C):</label>
-<input type="number" id="temp" placeholder="請輸入氣溫">
-
-<label>濕度 (%):</label>
-<input type="number" id="humidity" placeholder="請輸入濕度">
-
-<label>風速:</label>
-<input type="number" id="wind" placeholder="請輸入風速">
-<select id="windUnit">
-  <option value="ms">m/s</option>
-  <option value="kmh">km/h</option>
-  <option value="kt">節 (kt)</option>
-  <option value="beaufort">蒲式風級</option>
+<label>溫度</label>
+<input type="number" id="temp" step="0.1" placeholder="輸入數值">
+<select id="tempUnit">
+    <option value="C">°C</option>
+    <option value="F">°F</option>
 </select>
 
-<label>陣風 (可選):</label>
-<input type="number" id="gust" placeholder="如有請輸入陣風，無則留空或填0">
+<label>濕度 (%)</label>
+<input type="number" id="humidity" step="1" placeholder="濕度">
+
+<label>風速</label>
+<input type="number" id="wind" step="0.1" placeholder="風速">
+<select id="windUnit">
+    <option value="ms">m/s</option>
+    <option value="kmh">km/h</option>
+    <option value="kt">節</option>
+    <option value="bf">蒲式風級</option>
+</select>
+
+<label>陣風 (可不填)</label>
+<input type="number" id="gust" step="0.1" placeholder="陣風">
 <select id="gustUnit">
-  <option value="ms">m/s</option>
-  <option value="kmh">km/h</option>
-  <option value="kt">節 (kt)</option>
-  <option value="beaufort">蒲式風級</option>
+    <option value="ms">m/s</option>
+    <option value="kmh">km/h</option>
+    <option value="kt">節</option>
+    <option value="bf">蒲式風級</option>
 </select>
 
 <button onclick="calculate()">計算體感溫度</button>
 
-<div id="result"></div>
+<div class="result" id="result"></div>
+<div class="result" id="windResult"></div>
+
+<div class="footer">
+    <p>計算參考公式：</p>
+    <div class="formula">
+        低溫風寒 (≤15°C)：WCT = 13.12 + 0.6215T - 11.37V^0.16 + 0.3965T·V^0.16<br>
+        高溫濕熱 (≥27°C)：Heat Index = -8.7847 + 1.6114T + 2.3385H - 0.1461T·H -0.0123T² -0.0164H² + 0.0022T²·H + 0.0007T·H² - 0.0000036T²·H²<br>
+        過渡區 (15~27°C)：Sigmoid 平滑混合 Wind Chill 與 Heat Index
+    </div>
+    <p>※ 體感溫度僅供參考，實際感受因個人體質、衣著、活動量、日照及風向而有所差異。</p>
+</div>
 
 <script>
-function beaufortToMs(B) {
-  return 0.836 * Math.pow(B, 1.5);
+function toMS(value, unit){
+    if(!value) return 0;
+    switch(unit){
+        case 'ms': return value;
+        case 'kmh': return value / 3.6;
+        case 'kt': return value * 0.514444;
+        case 'bf': return 0.836 * Math.pow(value, 1.5);
+        default: return value;
+    }
 }
 
-function windToMs(value, unit) {
-  switch (unit) {
-    case "ms": return value;
-    case "kmh": return value / 3.6;
-    case "kt": return value * 0.514444;
-    case "beaufort": return beaufortToMs(value);
-    default: return value;
-  }
+function fromMS(value){
+    return {
+        ms: value.toFixed(1),
+        kmh: (value*3.6).toFixed(1),
+        kt: (value/0.514444).toFixed(1),
+        bf: Math.pow(value/0.836, 2/3).toFixed(1)
+    };
 }
 
-// 高溫濕熱公式 (簡化 Heat Index)
-function heatIndex(T, H) {
-  return T + 0.33 * (H / 100) * T;
+function windChill(T, V_kmh){
+    if(T > 10 || V_kmh < 4.8) return T;
+    return 13.12 + 0.6215*T - 11.37*Math.pow(V_kmh,0.16) + 0.3965*T*Math.pow(V_kmh,0.16);
 }
 
-function calculate() {
-  const T = parseFloat(document.getElementById("temp").value);
-  const H = parseFloat(document.getElementById("humidity").value);
-  let V = parseFloat(document.getElementById("wind").value);
-  let G = parseFloat(document.getElementById("gust").value);
+function heatIndex(T, H){
+    return -8.78469475556 + 1.61139411*T + 2.33854883889*H - 0.14611605*T*H
+           -0.012308094*T*T -0.0164248277778*H*H + 0.002211732*T*T*H
+           +0.00072546*T*H*H -0.000003582*T*T*H*H;
+}
 
-  const windUnit = document.getElementById("windUnit").value;
-  const gustUnit = document.getElementById("gustUnit").value;
+function sigmoidMix(T, Tc, Th){
+    let k = 0.5;
+    let w = 1 / (1 + Math.exp(-k*(T-21)));
+    return Tc + w*(Th-Tc);
+}
 
-  if (isNaN(T) || isNaN(H) || isNaN(V)) {
-    document.getElementById("result").textContent = "請填寫氣溫、濕度與風速";
-    return;
-  }
+function calculate(){
+    let T = parseFloat(document.getElementById("temp").value);
+    let Tunit = document.getElementById("tempUnit").value;
+    let H = parseFloat(document.getElementById("humidity").value);
+    let V = parseFloat(document.getElementById("wind").value);
+    let Vunit = document.getElementById("windUnit").value;
+    let G = parseFloat(document.getElementById("gust").value);
+    let Gunit = document.getElementById("gustUnit").value;
 
-  // 轉 m/s
-  V = windToMs(V, windUnit);
-  let useGust = !isNaN(G) && G > 0;
-  if (useGust) {
-    G = windToMs(G, gustUnit);
-  }
+    if(isNaN(T) || isNaN(H) || isNaN(V)){
+        alert("溫度、濕度、風速必填！");
+        return;
+    }
 
-  // 風寒公式
-  let effectiveWind = useGust ? (V + G) / 2 : V;
-  let T_cold = T - 0.7 * effectiveWind - 0.2 * (H / 100) * (T - 10);
+    // 華氏轉攝氏
+    if(Tunit === 'F') T = (T-32)/1.8;
 
-  let T_apparent;
+    let V_m = toMS(V, Vunit);
+    let G_m = toMS(G, Gunit);
+    let Veff = G_m > 0 ? (V_m + G_m)/2 : V_m;
+    let Veff_kmh = Veff * 3.6;
 
-  if (T <= 15) {
-    // 低溫公式
-    T_apparent = T_cold;
-  } else if (T >= 27) {
-    // 高溫公式
-    T_apparent = heatIndex(T, H);
-  } else {
-    // 線性過渡公式
-    let T_high = heatIndex(T, H);
-    let w_cold = (27 - T) / (27 - 15); // 15~27°C 線性過渡
-    T_apparent = w_cold * T_cold + (1 - w_cold) * T_high;
-  }
+    let T_apparent;
 
-  // 四捨五入到小數點第一位
-  T_apparent = Math.round(T_apparent * 10) / 10;
+    if(T <= 15){
+        T_apparent = windChill(T, Veff_kmh);
+    } else if(T >= 27){
+        T_apparent = heatIndex(T, H);
+    } else {
+        let Tc = windChill(T, Veff_kmh);
+        let Th = heatIndex(T, H);
+        T_apparent = sigmoidMix(T, Tc, Th);
+    }
 
-  document.getElementById("result").textContent = `體感溫度：約 ${T_apparent} °C`;
+    T_apparent = parseFloat(T_apparent.toFixed(1));
+    document.getElementById("result").textContent = `體感溫度：約 ${T_apparent} °C`;
+
+    let windUnits = fromMS(Veff);
+    let gustUnits = G_m > 0 ? fromMS(G_m) : null;
+
+    let windText = `有效風速：${windUnits.ms} m/s / ${windUnits.kmh} km/h / ${windUnits.kt} kt / ${windUnits.bf} BF`;
+    if(gustUnits){
+        windText += `，陣風：${gustUnits.ms} m/s / ${gustUnits.kmh} km/h / ${gustUnits.kt} kt / ${gustUnits.bf} BF`;
+    }
+    document.getElementById("windResult").textContent = windText;
 }
 </script>
 
-<p style="margin-top: 40px; color:#888; text-align:center;">製作人：夜ゞ無尾熊</p>
 </body>
 </html>
