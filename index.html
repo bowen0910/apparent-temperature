@@ -71,20 +71,20 @@
     <h1>體感溫度計算機</h1>
 
     <label>氣溫（°C）</label>
-    <input id="temp" type="number" step="0.1" placeholder="例如 14.0">
+    <input id="temp" type="number" step="0.1">
 
     <label>相對濕度（%）</label>
-    <input id="humidity" type="number" step="1" placeholder="例如 72">
+    <input id="humidity" type="number" step="1">
 
     <label>風速</label>
-    <input id="wind" type="number" step="0.1" placeholder="例如 6.7">
+    <input id="wind" type="number" step="0.1">
     <select id="windUnit">
       <option value="ms">m/s</option>
       <option value="beaufort">蒲式風級</option>
     </select>
 
     <label>陣風（可不填）</label>
-    <input id="gust" type="number" step="0.1" placeholder="例如 12.8 或留空">
+    <input id="gust" type="number" step="0.1">
     <select id="gustUnit">
       <option value="ms">m/s</option>
       <option value="beaufort">蒲式風級</option>
@@ -126,7 +126,6 @@
         G = beaufortToMs(G);
       }
 
-      // 基礎體感溫度（簡化風寒 + 濕度修正）
       let apparentTemp;
 
       if (useGust) {
