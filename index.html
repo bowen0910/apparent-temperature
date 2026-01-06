@@ -143,16 +143,11 @@
     // 統一轉換各種單位到 m/s
     function windToMs(value, unit) {
       switch (unit) {
-        case "ms":
-          return value;
-        case "kmh":
-          return value / 3.6;
-        case "kt":
-          return value * 0.514444;
-        case "beaufort":
-          return beaufortToMs(value);
-        default:
-          return value;
+        case "ms": return value;
+        case "kmh": return value / 3.6;
+        case "kt": return value * 0.514444;
+        case "beaufort": return beaufortToMs(value);
+        default: return value;
       }
     }
 
@@ -170,14 +165,14 @@
         return;
       }
 
-      // 轉換單位到 m/s
+      // 轉 m/s
       V = windToMs(V, windUnit);
       let useGust = !isNaN(G) && G > 0;
       if (useGust) {
         G = windToMs(G, gustUnit);
       }
 
-      // 計算體感溫度
+      // 體感溫度計算
       let apparentTemp;
       if (useGust) {
         const effectiveWind = (V + G) / 2;
@@ -185,10 +180,8 @@
       } else {
         apparentTemp = T - 0.7 * V - 0.2 * (H / 100) * (T - 10);
       }
-
       apparentTemp = Math.round(apparentTemp * 10) / 10;
 
-      // 顯示結果
       document.getElementById("result").textContent = `體感溫度：約 ${apparentTemp} °C`;
 
       // 顯示 ℹ️ 說明
