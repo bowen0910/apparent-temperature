@@ -146,7 +146,11 @@ T ≤ 15°C（冷）：<br>
 - 晴天：+2.5°C<br>
 - 強烈日照：+4°C<br>
 T ≥ 27°C（高溫）：<br>
-- 可略微增加 0.5~1°C<br><br>
+- 夜間：0°C<br>
+- 陰天：+0.5°C<br>
+- 多雲：+1°C<br>
+- 晴天：+1°C<br>
+- 強烈日照：+1°C<br><br>
 
 6. 計算結果四捨五入至小數點第一位
 </div>
@@ -195,11 +199,11 @@ function calculate() {
   let T_cold = T - 0.7 * effectiveWind - 0.2 * (H / 100) * (T - 10);
   let T_apparent;
 
-  if (T <= 15) {
+  if (T <= 15) { // 冷
     T_apparent = T_cold;
-  } else if (T >= 27) {
+  } else if (T >= 27) { // 高溫
     T_apparent = heatIndex(T, H);
-  } else {
+  } else { // 過渡
     let T_high = heatIndex(T, H);
     let w_cold = (27 - T) / (27 - 15);
     T_apparent = w_cold * T_cold + (1 - w_cold) * T_high;
@@ -209,25 +213,25 @@ function calculate() {
   if (T <= 15) { // 冷
     switch(sun) {
       case "overcast": T_apparent += -0.5; break;
-      case "cloudy": T_apparent += -0.2; break;
-      case "sunny": T_apparent += 0.5; break;
-      case "strong": T_apparent += 1; break;
+      case "cloudy":   T_apparent += -0.2; break;
+      case "sunny":    T_apparent += 0.5; break;
+      case "strong":   T_apparent += 1;   break;
       default: break;
     }
   } else if (T < 27) { // 過渡
     switch(sun) {
       case "overcast": T_apparent += 0.5; break;
-      case "cloudy": T_apparent += 1.5; break;
-      case "sunny": T_apparent += 2.5; break;
-      case "strong": T_apparent += 4; break;
+      case "cloudy":   T_apparent += 1.5; break;
+      case "sunny":    T_apparent += 2.5; break;
+      case "strong":   T_apparent += 4;   break;
       default: break;
     }
   } else { // 高溫
     switch(sun) {
       case "overcast": T_apparent += 0.5; break;
-      case "cloudy": T_apparent += 1; break;
-      case "sunny": T_apparent += 1; break;
-      case "strong": T_apparent += 1; break;
+      case "cloudy":   T_apparent += 1;   break;
+      case "sunny":    T_apparent += 1;   break;
+      case "strong":   T_apparent += 1;   break;
       default: break;
     }
   }
