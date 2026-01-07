@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>體感溫度計算機</title>
 <style>
-  body { background-color:#000; color:#fff; font-family:Arial,sans-serif; padding:10px; max-width:480px; margin:auto; }
+  body { background-color:#000; color:#fff; font-family:Arial,sans-serif; padding:10px; max-width:480px; margin:auto; position:relative; }
   h1 { color:#FFD700; text-align:center; margin-bottom:20px; font-size:24px; }
   label { display:block; margin-top:8px; font-size:16px; }
   input, select { width:100%; padding:6px; margin-top:4px; margin-bottom:8px; border-radius:4px; border:none; font-size:16px; }
@@ -17,9 +17,12 @@
   summary { cursor:pointer; font-weight:bold; }
   #sunTip { font-size:12px; color:#888; margin-bottom:6px; }
   #precipitationContainer { display:none; }
+  #version { position:absolute; top:10px; right:10px; font-size:12px; color:#888; }
 </style>
 </head>
 <body>
+<div id="version">v1.0.3</div>
+
 <h1>體感溫度計算機</h1>
 
 <label>氣溫:</label>
@@ -103,8 +106,7 @@ T_final = T_app + F_precip ，四捨五入至小數點第一位
 </details>
 
 <p id="note">體感溫度僅供參考，實際感受因個人體質、衣著、活動量、日照、降水及風向而有所差異。</p>
-<p id="note">製作：夜ゞ無尾熊</p>
-<p id="note">版本號：v1.0.2</p>
+<p id="note">設計者：夜ゞ無尾熊</p>
 
 <script>
 function beaufortToMs(B) { return 0.836 * Math.pow(B, 1.5); }
@@ -152,7 +154,6 @@ function calculate() {
   if(useGust) G=windToMs(G, gustUnit);
   let effectiveWind=useGust?(V+G)/2:V;
 
-  // 低溫濕度權重降低
   const T_cold=T-0.7*effectiveWind-0.12*(H/100)*(T-10);
   const T_high=heatIndex(T,H);
   let T_app;
@@ -160,7 +161,6 @@ function calculate() {
   else if(T>=27) T_app=T_high;
   else { const w_cold=(27-T)/12; T_app=w_cold*T_cold+(1-w_cold)*T_high; }
 
-  // 日照修正（低溫區調整後）
   if(T<=15){ switch(weather){
     case "night": T_app+=-0.2; break; 
     case "overcast": T_app+=0; break;
@@ -183,7 +183,6 @@ function calculate() {
     case "strong": T_app+=2.0; break; 
   } }
 
-  // 降雨/降雪係數
   const rainFactorLow={"lightest":-0.6,"light":-0.6,"moderate":-1.4,"heavy":-2.3,"extreme":-3.2};
   const rainFactorMid={"lightest":-0.3,"light":-0.3,"moderate":-0.7,"heavy":-1.5,"extreme":-2.0};
   const rainFactorHigh={"lightest":-0.1,"light":-0.1,"moderate":-0.3,"heavy":-0.7,"extreme":-1.0};
