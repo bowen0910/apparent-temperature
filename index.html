@@ -81,18 +81,28 @@
 
 <details>
 <summary>計算公式</summary>
-1. **風速轉換：**<br>
-2. **低溫風寒公式 (T ≤ 15°C)**<br>
-3. **高溫公式 (T ≥ 27°C)**<br>
-4. **線性過渡區 (15°C < T < 27°C)**<br>
-5. **日照修正依溫度區間**<br>
-6. **降雨/降雪文字強度影響** (降雨依三區間變化，降雪只低溫)<br>
-7. **最終體感溫度計算：**<br>
-T_final = T_app + F_precip，四捨五入至小數點第一位
+1. **低溫風寒公式 (T ≤ 15°C)**：<br>
+T_cold = T - 0.7*V_eff - 0.2*(H/100)*(T-10)<br><br>
+
+2. **高溫公式 (T ≥ 27°C)**：<br>
+T_high = T + 0.33*(H/100)*T<br><br>
+
+3. **線性過渡區公式 (15°C < T < 27°C)**：<br>
+T_app = w_cold*T_cold + (1-w_cold)*T_high ，其中 w_cold = (27-T)/12<br><br>
+
+4. **日照修正公式**：<br>
+T_app = T_app + 日照修正值 (依溫度區間及天氣類型)<br><br>
+
+5. **降雨及降雪影響溫度之公式**：<br>
+F_precip = 降雨或降雪係數 (依強度及溫度區間)<br><br>
+
+6. **最終體感溫度計算公式**：<br>
+T_final = T_app + F_precip ，四捨五入至小數點第一位
 </details>
 
 <p id="note">體感溫度僅供參考，實際感受因個人體質、衣著、活動量、日照、降水及風向而有所差異。</p>
 <p id="note">製作：夜ゞ無尾熊</p>
+<p id="note">版本號：v1.0.0</p>
 
 <script>
 function beaufortToMs(B) { return 0.836 * Math.pow(B, 1.5); }
@@ -107,7 +117,6 @@ function windToMs(value, unit) {
 }
 function heatIndex(T,H){ return T + 0.33*(H/100)*T; }
 
-// 控制降雨/降雪輸入欄位顯示
 function togglePrecipitation() {
   const weather = document.getElementById("weather").value;
   const container = document.getElementById("precipitationContainer");
