@@ -60,6 +60,11 @@
     color: #aaa;
     line-height: 1.4;
   }
+  #sunTip {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 10px;
+  }
 </style>
 </head>
 <body>
@@ -98,14 +103,14 @@
   <option value="sunny">晴天</option>
   <option value="strong">強烈日照 (夏天中午直射)</option>
 </select>
+<div id="sunTip">若無法判斷雲量，建議選擇「多雲」。</div>
 
 <button onclick="calculate()">計算體感溫度</button>
 
 <div id="result"></div>
 
 <p id="note">
-體感溫度僅供參考，實際感受因個人體質、衣著、活動量、日照及風向而有所差異。<br>
-若無法判斷雲量，建議選擇「多雲」。
+體感溫度僅供參考，實際感受因個人體質、衣著、活動量、日照及風向而有所差異。
 </p>
 
 <div id="formulas">
