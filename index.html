@@ -49,6 +49,7 @@
     <option value="kmh">km/h</option>
     <option value="kt">節</option>
     <option value="beaufort">蒲式風級</option>
+    <option value="mph">mph</option>
   </select>
 </div>
 
@@ -60,6 +61,7 @@
     <option value="kmh">km/h</option>
     <option value="kt">節</option>
     <option value="beaufort">蒲式風級</option>
+    <option value="mph">mph</option>
   </select>
 </div>
 
@@ -124,16 +126,19 @@ T_final = T_app + F_precip ，四捨五入至小數點第一位
 <p id="note">設計者：夜ゞ無尾熊</p>
 
 <script>
-function beaufortToMs(B) { return 0.836 * Math.pow(B, 1.5); }
+function beaufortToMs(B){ return 0.836 * Math.pow(B,1.5); }
+
 function windToMs(value, unit){
   switch(unit){
     case "ms": return value;
     case "kmh": return value/3.6;
     case "kt": return value*0.514444;
     case "beaufort": return beaufortToMs(value);
+    case "mph": return value*0.44704;
     default: return value;
   }
 }
+
 function heatIndex(T,H){ return T + 0.33*(H/100)*T; }
 
 function togglePrecipitation(){
@@ -192,7 +197,7 @@ function calculate(){
   } }
   else{ switch(weather){
     case "night": T_app+=0; break; 
-    case "overcast": T_app+=0.5; break; 
+    case "overcast": T_app+=0.5; break;
     case "cloudy": T_app+=1.0; break; 
     case "sunny": T_app+=1.3; break; 
     case "strong": T_app+=2.0; break; 
