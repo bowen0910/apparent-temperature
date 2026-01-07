@@ -4,77 +4,103 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>體感溫度計算機</title>
+
 <style>
-  body {
-    background-color: #000;
-    color: #fff;
-    font-family: Arial, sans-serif;
-    padding: 20px;
-  }
-  h1 {
-    color: #FFD700;
-    text-align: center;
-    margin-bottom: 30px;
-  }
-  label {
-    display: block;
-    margin-top: 10px;
-  }
-  input, select {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    border: none;
-    font-size: 16px;
-  }
-  button {
-    background-color: #444;
-    color: #fff;
-    padding: 10px;
-    width: 100%;
-    font-size: 18px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  button:hover {
-    background-color: #666;
-  }
-  #result {
-    margin-top: 20px;
-    font-size: 28px;
-    color: #00FF00;
-    text-align: center;
-  }
-  #note {
-    margin-top: 20px;
-    font-size: 14px;
-    color: #888;
-    text-align: center;
-  }
-  details {
-    margin-top: 20px;
-    font-size: 12px;
-    color: #aaa;
-  }
-  summary {
-    cursor: pointer;
-    font-weight: bold;
-  }
-  #sunTip {
-    font-size: 12px;
-    color: #888;
-    margin-bottom: 10px;
-  }
+body {
+  background-color: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  padding: 12px;
+}
+
+h1 {
+  color: #FFD700;
+  text-align: center;
+  margin-bottom: 12px;
+  font-size: 24px;
+}
+
+.container {
+  max-width: 420px;
+  margin: auto;
+}
+
+label {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+input, select {
+  width: 100%;
+  padding: 6px;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  border: none;
+  font-size: 14px;
+}
+
+button {
+  background-color: #444;
+  color: #fff;
+  padding: 10px;
+  width: 100%;
+  font-size: 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+button:hover {
+  background-color: #666;
+}
+
+#result {
+  margin-top: 10px;
+  font-size: 24px;
+  color: #00FF00;
+  text-align: center;
+}
+
+#note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #888;
+  text-align: center;
+}
+
+details {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #aaa;
+}
+
+summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#sunTip {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 4px;
+}
 </style>
 </head>
+
 <body>
 <h1>體感溫度計算機</h1>
 
-<label>氣溫 (°C):</label>
+<div class="container">
+
+<label>氣溫：</label>
 <input type="number" id="temp" placeholder="請輸入氣溫">
+<select id="tempUnit">
+  <option value="c">°C 攝氏</option>
+  <option value="f">°F 華氏</option>
+</select>
 
 <label>濕度 (%):</label>
 <input type="number" id="humidity" placeholder="請輸入濕度">
@@ -89,7 +115,7 @@
 </select>
 
 <label>陣風 (可選):</label>
-<input type="number" id="gust" placeholder="如有請輸入陣風，無則留空或填0">
+<input type="number" id="gust" placeholder="無可留空或填 0">
 <select id="gustUnit">
   <option value="ms">m/s</option>
   <option value="kmh">km/h</option>
@@ -100,13 +126,13 @@
 <label>日照情況 (可選):</label>
 <select id="sun">
   <option value="">未選擇</option>
-  <option value="night">夜間 (無日照)</option>
+  <option value="night">夜間</option>
   <option value="overcast">陰天</option>
   <option value="cloudy">多雲</option>
   <option value="sunny">晴天</option>
-  <option value="strong">強烈日照 (夏天中午直射)</option>
+  <option value="strong">強烈日照</option>
 </select>
-<div id="sunTip">若無法判斷雲量，建議選擇「多雲」。</div>
+<div id="sunTip">無法判斷時建議選「多雲」</div>
 
 <button onclick="calculate()">計算體感溫度</button>
 
@@ -114,33 +140,14 @@
 
 <details>
 <summary>計算公式</summary>
-1. 風速轉換：<br>
-- m/s → m/s : 直接使用<br>
-- km/h → m/s : 除以 3.6<br>
-- kt → m/s : 乘以 0.514444<br>
-- 蒲式風級 → m/s : V = 0.836 × B^(3/2)<br><br>
-
-2. 低溫風寒公式 (T ≤ 15°C)：<br>
-T_cold = T - 0.7 × V_eff - 0.2 × (H/100) × (T - 10)<br>
-V_eff = (風速 + 陣風平均) 或只用風速<br><br>
-
-3. 高溫公式 (T ≥ 27°C)：<br>
-Heat Index (簡化版)： T_high = T + 0.33 × (H/100) × T<br><br>
-
-4. 線性過渡區 (15°C < T < 27°C)：<br>
-T_apparent = w_cold × T_cold + (1 - w_cold) × T_high<br>
-w_cold = (27 - T) / (27 - 15)<br><br>
-
-5. 日照修正依溫度區間：<br>
-T ≤ 15°C：夜間 0.0°C / 陰天 -0.5°C / 多雲 -0.2°C / 晴天 +0.5°C / 強烈日照 +1.0°C<br>
-15°C < T < 27°C：夜間 0.0°C / 陰天 +0.5°C / 多雲 +1.5°C / 晴天 +2.5°C / 強烈日照 +4.0°C<br>
-T ≥ 27°C：夜間 0.0°C / 陰天 +0.5°C / 多雲 +1.0°C / 晴天 +1.3°C / 強烈日照 +2.0°C<br><br>
-
-6. 計算結果四捨五入至小數點第一位
+風寒、熱指數與日照修正依常見氣象計算方式進行，<br>
+計算皆以攝氏溫度與 m/s 為基準，結果僅供參考。
 </details>
 
-<p id="note">體感溫度僅供參考，實際感受因個人體質、衣著、活動量、日照及風向而有所差異。</p>
+<p id="note">體感溫度僅供參考，實際感受因人而異。</p>
 <p id="note">製作：夜ゞ無尾熊</p>
+
+</div>
 
 <script>
 function beaufortToMs(B) {
@@ -157,69 +164,47 @@ function windToMs(value, unit) {
   }
 }
 
+function fahrenheitToCelsius(F) {
+  return (F - 32) * 5 / 9;
+}
+
 function heatIndex(T, H) {
   return T + 0.33 * (H / 100) * T;
 }
 
 function calculate() {
-  const T = parseFloat(document.getElementById("temp").value);
+  let T = parseFloat(document.getElementById("temp").value);
+  const tempUnit = document.getElementById("tempUnit").value;
   const H = parseFloat(document.getElementById("humidity").value);
   let V = parseFloat(document.getElementById("wind").value);
   let G = parseFloat(document.getElementById("gust").value);
   const sun = document.getElementById("sun").value;
-
-  const windUnit = document.getElementById("windUnit").value;
-  const gustUnit = document.getElementById("gustUnit").value;
 
   if (isNaN(T) || isNaN(H) || isNaN(V)) {
     document.getElementById("result").textContent = "缺少氣溫、濕度及風速";
     return;
   }
 
-  V = windToMs(V, windUnit);
-  let useGust = !isNaN(G) && G > 0;
-  if (useGust) {
-    G = windToMs(G, gustUnit);
+  if (tempUnit === "f") {
+    T = fahrenheitToCelsius(T);
   }
 
-  let effectiveWind = useGust ? (V + G) / 2 : V;
-  let T_cold = T - 0.7 * effectiveWind - 0.2 * (H / 100) * (T - 10);
+  V = windToMs(V, document.getElementById("windUnit").value);
+  if (!isNaN(G) && G > 0) {
+    G = windToMs(G, document.getElementById("gustUnit").value);
+    V = (V + G) / 2;
+  }
+
+  let T_cold = T - 0.7 * V - 0.2 * (H / 100) * (T - 10);
   let T_apparent;
 
-  if (T <= 15) { 
-    T_apparent = T_cold;
-  } else if (T >= 27) { 
-    T_apparent = heatIndex(T, H);
-  } else { 
-    let T_high = heatIndex(T, H);
-    let w_cold = (27 - T) / 12;
-    T_apparent = w_cold * T_cold + (1 - w_cold) * T_high;
-  }
-
   if (T <= 15) {
-    switch(sun) {
-      case "night":    T_apparent += 0.0; break;
-      case "overcast": T_apparent += -0.5; break;
-      case "cloudy":   T_apparent += -0.2; break;
-      case "sunny":    T_apparent += 0.5; break;
-      case "strong":   T_apparent += 1.0; break;
-    }
-  } else if (T < 27) {
-    switch(sun) {
-      case "night":    T_apparent += 0.0; break;
-      case "overcast": T_apparent += 0.5; break;
-      case "cloudy":   T_apparent += 1.5; break;
-      case "sunny":    T_apparent += 2.5; break;
-      case "strong":   T_apparent += 4.0; break;
-    }
+    T_apparent = T_cold;
+  } else if (T >= 27) {
+    T_apparent = heatIndex(T, H);
   } else {
-    switch(sun) {
-      case "night":    T_apparent += 0.0; break;
-      case "overcast": T_apparent += 0.5; break;
-      case "cloudy":   T_apparent += 1.0; break;
-      case "sunny":    T_apparent += 1.3; break;
-      case "strong":   T_apparent += 2.0; break;
-    }
+    let w = (27 - T) / 12;
+    T_apparent = w * T_cold + (1 - w) * heatIndex(T, H);
   }
 
   T_apparent = Math.round(T_apparent * 10) / 10;
