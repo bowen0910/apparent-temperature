@@ -10,14 +10,14 @@ body {
   background-color: #000;
   color: #fff;
   font-family: Arial, sans-serif;
-  padding: 12px;
+  padding: 14px;
 }
 
 h1 {
   color: #FFD700;
   text-align: center;
-  margin-bottom: 12px;
-  font-size: 24px;
+  margin-bottom: 14px;
+  font-size: 26px;
 }
 
 .container {
@@ -27,18 +27,18 @@ h1 {
 
 label {
   display: block;
-  margin-top: 6px;
-  font-size: 14px;
+  margin-top: 8px;
+  font-size: 15px;
 }
 
 input, select {
   width: 100%;
-  padding: 6px;
+  padding: 8px;
   margin-top: 4px;
   margin-bottom: 6px;
   border-radius: 4px;
   border: none;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 button {
@@ -46,11 +46,11 @@ button {
   color: #fff;
   padding: 10px;
   width: 100%;
-  font-size: 16px;
+  font-size: 17px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 button:hover {
@@ -58,8 +58,8 @@ button:hover {
 }
 
 #result {
-  margin-top: 10px;
-  font-size: 24px;
+  margin-top: 12px;
+  font-size: 28px;
   color: #00FF00;
   text-align: center;
 }
@@ -72,18 +72,19 @@ button:hover {
 }
 
 details {
-  margin-top: 12px;
-  font-size: 12px;
+  margin-top: 14px;
+  font-size: 13px;
   color: #aaa;
 }
 
 summary {
   cursor: pointer;
   font-weight: bold;
+  font-size: 14px;
 }
 
 #sunTip {
-  font-size: 11px;
+  font-size: 12px;
   color: #888;
   margin-bottom: 4px;
 }
@@ -102,10 +103,10 @@ summary {
   <option value="f">°F 華氏</option>
 </select>
 
-<label>濕度 (%):</label>
+<label>濕度 (%)：</label>
 <input type="number" id="humidity" placeholder="請輸入濕度">
 
-<label>風速:</label>
+<label>風速：</label>
 <input type="number" id="wind" placeholder="請輸入風速">
 <select id="windUnit">
   <option value="ms">m/s</option>
@@ -114,7 +115,7 @@ summary {
   <option value="beaufort">蒲式風級</option>
 </select>
 
-<label>陣風 (可選):</label>
+<label>陣風（可選）：</label>
 <input type="number" id="gust" placeholder="無可留空或填 0">
 <select id="gustUnit">
   <option value="ms">m/s</option>
@@ -123,16 +124,16 @@ summary {
   <option value="beaufort">蒲式風級</option>
 </select>
 
-<label>日照情況 (可選):</label>
+<label>日照情況（可選）：</label>
 <select id="sun">
   <option value="">未選擇</option>
-  <option value="night">夜間</option>
+  <option value="night">夜間（無日照）</option>
   <option value="overcast">陰天</option>
   <option value="cloudy">多雲</option>
   <option value="sunny">晴天</option>
   <option value="strong">強烈日照</option>
 </select>
-<div id="sunTip">無法判斷時建議選「多雲」</div>
+<div id="sunTip">無法判斷時，建議選擇「多雲」。</div>
 
 <button onclick="calculate()">計算體感溫度</button>
 
@@ -140,11 +141,37 @@ summary {
 
 <details>
 <summary>計算公式</summary>
-風寒、熱指數與日照修正依常見氣象計算方式進行，<br>
-計算皆以攝氏溫度與 m/s 為基準，結果僅供參考。
+
+【一、單位轉換】<br>
+- km/h → m/s：V = km/h ÷ 3.6<br>
+- 節 (kt) → m/s：V = kt × 0.514444<br>
+- 蒲式風級 → m/s：V = 0.836 × B<sup>3/2</sup><br>
+- 華氏 → 攝氏：T(°C) = (T(°F) − 32) × 5 / 9<br><br>
+
+【二、有效風速】<br>
+- 若有陣風：V<sub>eff</sub> = (平均風速 + 陣風) ÷ 2<br>
+- 若無陣風：V<sub>eff</sub> = 平均風速<br><br>
+
+【三、低溫風寒公式（T ≤ 15°C）】<br>
+T<sub>cold</sub> = T − 0.7 × V<sub>eff</sub> − 0.2 × (H / 100) × (T − 10)<br><br>
+
+【四、高溫熱指數（T ≥ 27°C，簡化式）】<br>
+T<sub>high</sub> = T + 0.33 × (H / 100) × T<br><br>
+
+【五、線性過渡區（15°C &lt; T &lt; 27°C）】<br>
+權重：w = (27 − T) / 12<br>
+T<sub>app</sub> = w × T<sub>cold</sub> + (1 − w) × T<sub>high</sub><br><br>
+
+【六、日照修正】<br>
+- 低溫區（≤15°C）：0.0 / −0.5 / −0.2 / +0.5 / +1.0°C<br>
+- 過渡區（15–27°C）：0.0 / +0.5 / +1.5 / +2.5 / +4.0°C<br>
+- 高溫區（≥27°C）：0.0 / +0.5 / +1.0 / +1.3 / +2.0°C<br><br>
+
+【七、結果】<br>
+最終體感溫度四捨五入至小數點第一位。
 </details>
 
-<p id="note">體感溫度僅供參考，實際感受因人而異。</p>
+<p id="note">體感溫度僅供參考，實際感受會因個人體質、衣著與活動量而有所不同。</p>
 <p id="note">製作：夜ゞ無尾熊</p>
 
 </div>
@@ -160,7 +187,6 @@ function windToMs(value, unit) {
     case "kmh": return value / 3.6;
     case "kt": return value * 0.514444;
     case "beaufort": return beaufortToMs(value);
-    default: return value;
   }
 }
 
@@ -174,20 +200,17 @@ function heatIndex(T, H) {
 
 function calculate() {
   let T = parseFloat(document.getElementById("temp").value);
-  const tempUnit = document.getElementById("tempUnit").value;
+  const unit = document.getElementById("tempUnit").value;
   const H = parseFloat(document.getElementById("humidity").value);
   let V = parseFloat(document.getElementById("wind").value);
   let G = parseFloat(document.getElementById("gust").value);
-  const sun = document.getElementById("sun").value;
 
   if (isNaN(T) || isNaN(H) || isNaN(V)) {
     document.getElementById("result").textContent = "缺少氣溫、濕度及風速";
     return;
   }
 
-  if (tempUnit === "f") {
-    T = fahrenheitToCelsius(T);
-  }
+  if (unit === "f") T = fahrenheitToCelsius(T);
 
   V = windToMs(V, document.getElementById("windUnit").value);
   if (!isNaN(G) && G > 0) {
@@ -196,19 +219,17 @@ function calculate() {
   }
 
   let T_cold = T - 0.7 * V - 0.2 * (H / 100) * (T - 10);
-  let T_apparent;
+  let T_app;
 
-  if (T <= 15) {
-    T_apparent = T_cold;
-  } else if (T >= 27) {
-    T_apparent = heatIndex(T, H);
-  } else {
+  if (T <= 15) T_app = T_cold;
+  else if (T >= 27) T_app = heatIndex(T, H);
+  else {
     let w = (27 - T) / 12;
-    T_apparent = w * T_cold + (1 - w) * heatIndex(T, H);
+    T_app = w * T_cold + (1 - w) * heatIndex(T, H);
   }
 
-  T_apparent = Math.round(T_apparent * 10) / 10;
-  document.getElementById("result").textContent = `體感溫度：約 ${T_apparent} °C`;
+  T_app = Math.round(T_app * 10) / 10;
+  document.getElementById("result").textContent = `體感溫度：約 ${T_app} °C`;
 }
 </script>
 
