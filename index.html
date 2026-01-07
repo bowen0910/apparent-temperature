@@ -114,125 +114,139 @@
 </select>
 <div id="sunTip">若無法判斷雲量，建議選擇「多雲」。</div>
 
+<label>降雨強度 (mm/h，可選):</label>
+<select id="rain">
+  <option value="0">無降雨</option>
+  <option value="0.3">毛毛雨</option>
+  <option value="0.6">小雨</option>
+  <option value="1.0">中雨</option>
+  <option value="1.3">大雨</option>
+</select>
+
+<label>降雪強度 (cm/h，可選):</label>
+<select id="snow">
+  <option value="0">無降雪</option>
+  <option value="0.5">小雪</option>
+  <option value="1.0">中雪</option>
+  <option value="1.5">大雪</option>
+</select>
+
 <button onclick="calculate()">計算體感溫度</button>
 
 <div id="result"></div>
 
 <details>
-<summary>計算公式</summary>
-1. **風速轉換：**<br>
-- m/s → m/s : 直接使用<br>
-- km/h → m/s : 除以 3.6<br>
-- kt → m/s : 乘以 0.514444<br>
-- 蒲式風級 → m/s : V = 0.836 × B^(3/2)<br><br>
-
-2. **低溫風寒公式 (T ≤ 15°C)：**<br>
-T_cold = T - 0.7 × V_eff - 0.2 × (H/100) × (T - 10)<br>
-V_eff = (風速 + 陣風平均) 或只用風速<br><br>
-
-3. **高溫公式 (T ≥ 27°C)：**<br>
-Heat Index (簡化版)：T_high = T + 0.33 × (H/100) × T<br><br>
-
-4. **線性過渡區 (15°C < T < 27°C)：**<br>
-T_apparent = w_cold × T_cold + (1 - w_cold) × T_high<br>
-w_cold = (27 - T) / 12<br><br>
-
-5. **日照修正依溫度區間：**<br>
-- T ≤ 15°C：夜間 0.0°C / 陰天 -0.5°C / 多雲 -0.2°C / 晴天 +0.5°C / 強烈日照 +1.0°C<br>
-- 15°C < T < 27°C：夜間 0.0°C / 陰天 +0.5°C / 多雲 +1.5°C / 晴天 +2.5°C / 強烈日照 +4.0°C<br>
-- T ≥ 27°C：夜間 0.0°C / 陰天 +0.5°C / 多雲 +1.0°C / 晴天 +1.3°C / 強烈日照 +2.0°C<br><br>
-
-6. 計算結果四捨五入至小數點第一位
+<summary>計算公式說明</summary>
+<p>公式將體感溫度拆成：</p>
+<ul>
+<li><b>T_base</b>：低溫使用風寒公式，高溫使用熱指數公式，15~27°C線性過渡</li>
+<li><b>F_sun</b>：日照修正</li>
+<li><b>F_precip</b>：降雨、降雪影響，用係數計算</li>
+<li>最終公式： <b>T_app = T_base + F_sun + F_rain + F_snow</b></li>
+</ul>
+<p>降雨、降雪係數會根據強度及風速修正低溫冷感或高溫悶濕感，參考氣象局方法。</p>
 </details>
 
 <p id="note">體感溫度僅供參考，實際感受因個人體質、衣著、活動量、日照及風向而有所差異。</p>
 <p id="note">製作：夜ゞ無尾熊</p>
 
 <script>
-function beaufortToMs(B) {
-  return 0.836 * Math.pow(B, 1.5);
-}
-
-function windToMs(value, unit) {
-  switch (unit) {
+function beaufortToMs(B) { return 0.836 * Math.pow(B, 1.5); }
+function windToMs(value, unit){
+  switch(unit){
     case "ms": return value;
-    case "kmh": return value / 3.6;
-    case "kt": return value * 0.514444;
+    case "kmh": return value/3.6;
+    case "kt": return value*0.514444;
     case "beaufort": return beaufortToMs(value);
     default: return value;
   }
 }
 
-function heatIndex(T, H) {
-  return T + 0.33 * (H / 100) * T;
-}
+function heatIndex(T,H){ return T + 0.33*(H/100)*T; }
 
-function calculate() {
+function calculate(){
   let T = parseFloat(document.getElementById("temp").value);
   const tempUnit = document.getElementById("tempUnit").value;
   const H = parseFloat(document.getElementById("humidity").value);
   let V = parseFloat(document.getElementById("wind").value);
   let G = parseFloat(document.getElementById("gust").value);
   const sun = document.getElementById("sun").value;
-
+  const rain = parseFloat(document.getElementById("rain").value);
+  const snow = parseFloat(document.getElementById("snow").value);
   const windUnit = document.getElementById("windUnit").value;
   const gustUnit = document.getElementById("gustUnit").value;
 
-  if (isNaN(T) || isNaN(H) || isNaN(V)) {
+  if(isNaN(T) || isNaN(H) || isNaN(V)){
     document.getElementById("result").textContent = "缺少氣溫、濕度及風速";
     return;
   }
 
   // 華氏轉攝氏
-  if(tempUnit === "F") T = (T - 32) * 5/9;
+  if(tempUnit === "F") T = (T-32)*5/9;
 
   // 風速轉換
   V = windToMs(V, windUnit);
-  let useGust = !isNaN(G) && G > 0;
-  if(useGust) G = windToMs(G, gustUnit);
-  let effectiveWind = useGust ? (V + G) / 2 : V;
+  let useGust = !isNaN(G) && G>0;
+  if(useGust) G = windToMs(G,gustUnit);
+  let V_eff = useGust ? (V+G)/2 : V;
 
-  // 計算低溫與高溫體感
-  const T_cold = T - 0.7 * effectiveWind - 0.2 * (H / 100) * (T - 10);
-  const T_high = heatIndex(T, H);
-
+  // 基本低溫與高溫體感
+  const T_cold = T - 0.7*V_eff - 0.2*(H/100)*(T-10);
+  const T_high = heatIndex(T,H);
   let T_app;
-  if(T <= 15) T_app = T_cold;
-  else if(T >= 27) T_app = T_high;
+  if(T<=15) T_app = T_cold;
+  else if(T>=27) T_app = T_high;
   else {
-    const w_cold = (27 - T) / 12;
-    T_app = w_cold * T_cold + (1 - w_cold) * T_high;
+    const w_cold = (27-T)/12;
+    T_app = w_cold*T_cold + (1-w_cold)*T_high;
   }
 
   // 日照修正
-  if(T <= 15){
+  if(T<=15){
     switch(sun){
-      case "night": T_app += 0.0; break;
-      case "overcast": T_app += -0.5; break;
-      case "cloudy": T_app += -0.2; break;
-      case "sunny": T_app += 0.5; break;
-      case "strong": T_app += 1.0; break;
+      case "night": T_app+=0.0; break;
+      case "overcast": T_app+=-0.5; break;
+      case "cloudy": T_app+=-0.2; break;
+      case "sunny": T_app+=0.5; break;
+      case "strong": T_app+=1.0; break;
     }
-  } else if(T < 27){
+  } else if(T<27){
     switch(sun){
-      case "night": T_app += 0.0; break;
-      case "overcast": T_app += 0.5; break;
-      case "cloudy": T_app += 1.5; break;
-      case "sunny": T_app += 2.5; break;
-      case "strong": T_app += 4.0; break;
+      case "night": T_app+=0.0; break;
+      case "overcast": T_app+=0.5; break;
+      case "cloudy": T_app+=1.5; break;
+      case "sunny": T_app+=2.5; break;
+      case "strong": T_app+=4.0; break;
     }
   } else {
     switch(sun){
-      case "night": T_app += 0.0; break;
-      case "overcast": T_app += 0.5; break;
-      case "cloudy": T_app += 1.0; break;
-      case "sunny": T_app += 1.3; break;
-      case "strong": T_app += 2.0; break;
+      case "night": T_app+=0.0; break;
+      case "overcast": T_app+=0.5; break;
+      case "cloudy": T_app+=1.0; break;
+      case "sunny": T_app+=1.3; break;
+      case "strong": T_app+=2.0; break;
     }
   }
 
-  // 四捨五入
-  T_app = Math.round(T_app * 10) / 10;
+  // 降雨係數
+  let F_rain = 0;
+  if(rain>0){
+    if(T<=15) F_rain = -rain*(1+0.1*V_eff);
+    else if(T<27) F_rain = rain*0.5*(H/100); // 悶熱感
+    else F_rain = -0.5*rain;
+  }
+
+  // 降雪係數
+  let F_snow = 0;
+  if(snow>0){
+    if(T<=15) F_snow = -snow*(1+0.1*V_eff);
+    else if(T<27) F_snow = snow*0.2; // 輕微悶濕感
+    else F_snow = -0.2*snow;
+  }
+
+  T_app = T_app + F_rain + F_snow;
+  T_app = Math.round(T_app*10)/10;
+
   document.getElementById("result").textContent = `體感溫度：約 ${T_app} °C`;
 }
 </script>
