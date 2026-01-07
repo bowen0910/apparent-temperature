@@ -91,8 +91,9 @@ T_high = T + 0.33*(H/100)*T<br><br>
 T_app = w_cold*T_cold + (1-w_cold)*T_high ，其中 w_cold = (27-T)/12<br><br>
 
 4. **日照修正公式**：<br>
+- 低溫區：夜間 -0.2 / 陰天 0 / 多雲 -0.1 / 晴天 0.6 / 強烈日照 1.2<br>
 - 高溫區強烈日照上限限制 +2°C，避免體感溫度過高<br>
-T_app = T_app + 日照修正值 (依溫度區間及天氣類型)<br><br>
+T_app = T_app + 日照修正值<br><br>
 
 5. **降雨及降雪影響溫度之公式**：<br>
 F_precip = 降雨或降雪係數 (依強度及溫度區間)<br><br>
@@ -103,7 +104,7 @@ T_final = T_app + F_precip ，四捨五入至小數點第一位
 
 <p id="note">體感溫度僅供參考，實際感受因個人體質、衣著、活動量、日照、降水及風向而有所差異。</p>
 <p id="note">製作：夜ゞ無尾熊</p>
-<p id="note">版本號：v1.0.1</p>
+<p id="note">版本號：v1.0.2</p>
 
 <script>
 function beaufortToMs(B) { return 0.836 * Math.pow(B, 1.5); }
@@ -159,19 +160,28 @@ function calculate() {
   else if(T>=27) T_app=T_high;
   else { const w_cold=(27-T)/12; T_app=w_cold*T_cold+(1-w_cold)*T_high; }
 
-  // 日照修正（高溫強烈日照上限限制）
+  // 日照修正（低溫區調整後）
   if(T<=15){ switch(weather){
-    case "night": T_app+=0; break; case "overcast": T_app+=-0.5; break;
-    case "cloudy": T_app+=-0.2; break; case "sunny": T_app+=0.5; break;
-    case "strong": T_app+=1.0; break; } }
+    case "night": T_app+=-0.2; break; 
+    case "overcast": T_app+=0; break;
+    case "cloudy": T_app+=-0.1; break; 
+    case "sunny": T_app+=0.6; break; 
+    case "strong": T_app+=1.2; break; 
+  } }
   else if(T<27){ switch(weather){
-    case "night": T_app+=0; break; case "overcast": T_app+=0.5; break;
-    case "cloudy": T_app+=1.5; break; case "sunny": T_app+=2.5; break;
-    case "strong": T_app+=4.0; break; } }
+    case "night": T_app+=0; break; 
+    case "overcast": T_app+=0.5; break;
+    case "cloudy": T_app+=1.5; break; 
+    case "sunny": T_app+=2.5; break; 
+    case "strong": T_app+=4.0; break; 
+  } }
   else{ switch(weather){
-    case "night": T_app+=0; break; case "overcast": T_app+=0.5; break;
-    case "cloudy": T_app+=1.0; break; case "sunny": T_app+=1.3; break;
-    case "strong": T_app+=2.0; break; } }
+    case "night": T_app+=0; break; 
+    case "overcast": T_app+=0.5; break; 
+    case "cloudy": T_app+=1.0; break; 
+    case "sunny": T_app+=1.3; break; 
+    case "strong": T_app+=2.0; break; 
+  } }
 
   // 降雨/降雪係數
   const rainFactorLow={"lightest":-0.6,"light":-0.6,"moderate":-1.4,"heavy":-2.3,"extreme":-3.2};
