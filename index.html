@@ -71,8 +71,7 @@
 </style>
 </head>
 <body>
-
-<h1 onclick="location.reload()">體感溫度計算機</h1>
+<h1>體感溫度計算機</h1>
 
 <label>氣溫 (°C):</label>
 <input type="number" id="temp" placeholder="請輸入氣溫">
@@ -116,24 +115,28 @@
 <details>
 <summary>計算公式</summary>
 1. 風速轉換：<br>
-- m/s → m/s：直接使用<br>
-- km/h → m/s：除以 3.6<br>
-- kt → m/s：乘以 0.514444<br>
-- 蒲式風級 → m/s：V = 0.836 × B^(3/2)<br><br>
+- m/s → m/s : 直接使用<br>
+- km/h → m/s : 除以 3.6<br>
+- kt → m/s : 乘以 0.514444<br>
+- 蒲式風級 → m/s : V = 0.836 × B^(3/2)<br><br>
 
 2. 低溫風寒公式 (T ≤ 15°C)：<br>
 T_cold = T - 0.7 × V_eff - 0.2 × (H/100) × (T - 10)<br>
-V_eff 為平均風速，陣風僅作為體感修正參考<br><br>
+V_eff = (風速 + 陣風平均) 或只用風速<br><br>
 
 3. 高溫公式 (T ≥ 27°C)：<br>
-Heat Index（簡化）：T_high = T + 0.33 × (H/100) × T<br><br>
+Heat Index (簡化版)： T_high = T + 0.33 × (H/100) × T<br><br>
 
 4. 線性過渡區 (15°C < T < 27°C)：<br>
-T_apparent = w_cold × T_cold + (1 − w_cold) × T_high<br>
-w_cold = (27 − T) / 12<br><br>
+T_apparent = w_cold × T_cold + (1 - w_cold) × T_high<br>
+w_cold = (27 - T) / (27 - 15)<br><br>
 
-5. 日照修正依溫度區間（略）<br>
-6. 結果四捨五入至小數點第一位
+5. 日照修正依溫度區間：<br>
+T ≤ 15°C：夜間 0.0°C / 陰天 -0.5°C / 多雲 -0.2°C / 晴天 +0.5°C / 強烈日照 +1.0°C<br>
+15°C < T < 27°C：夜間 0.0°C / 陰天 +0.5°C / 多雲 +1.5°C / 晴天 +2.5°C / 強烈日照 +4.0°C<br>
+T ≥ 27°C：夜間 0.0°C / 陰天 +0.5°C / 多雲 +1.0°C / 晴天 +1.3°C / 強烈日照 +2.0°C<br><br>
+
+6. 計算結果四捨五入至小數點第一位
 </details>
 
 <p id="note">體感溫度僅供參考，實際感受因個人體質、衣著、活動量、日照及風向而有所差異。</p>
@@ -165,27 +168,58 @@ function calculate() {
   let G = parseFloat(document.getElementById("gust").value);
   const sun = document.getElementById("sun").value;
 
+  const windUnit = document.getElementById("windUnit").value;
+  const gustUnit = document.getElementById("gustUnit").value;
+
   if (isNaN(T) || isNaN(H) || isNaN(V)) {
     document.getElementById("result").textContent = "缺少氣溫、濕度及風速";
     return;
   }
 
-  V = windToMs(V, document.getElementById("windUnit").value);
+  V = windToMs(V, windUnit);
   let useGust = !isNaN(G) && G > 0;
-  if (useGust) G = windToMs(G, document.getElementById("gustUnit").value);
+  if (useGust) {
+    G = windToMs(G, gustUnit);
+  }
 
-  let effectiveWind = useGust ? V + 0.3 * (G - V) : V;
-
+  let effectiveWind = useGust ? (V + G) / 2 : V;
   let T_cold = T - 0.7 * effectiveWind - 0.2 * (H / 100) * (T - 10);
   let T_apparent;
 
-  if (T <= 15) {
+  if (T <= 15) { 
     T_apparent = T_cold;
-  } else if (T >= 27) {
+  } else if (T >= 27) { 
     T_apparent = heatIndex(T, H);
+  } else { 
+    let T_high = heatIndex(T, H);
+    let w_cold = (27 - T) / 12;
+    T_apparent = w_cold * T_cold + (1 - w_cold) * T_high;
+  }
+
+  if (T <= 15) {
+    switch(sun) {
+      case "night":    T_apparent += 0.0; break;
+      case "overcast": T_apparent += -0.5; break;
+      case "cloudy":   T_apparent += -0.2; break;
+      case "sunny":    T_apparent += 0.5; break;
+      case "strong":   T_apparent += 1.0; break;
+    }
+  } else if (T < 27) {
+    switch(sun) {
+      case "night":    T_apparent += 0.0; break;
+      case "overcast": T_apparent += 0.5; break;
+      case "cloudy":   T_apparent += 1.5; break;
+      case "sunny":    T_apparent += 2.5; break;
+      case "strong":   T_apparent += 4.0; break;
+    }
   } else {
-    let w = (27 - T) / 12;
-    T_apparent = w * T_cold + (1 - w) * heatIndex(T, H);
+    switch(sun) {
+      case "night":    T_apparent += 0.0; break;
+      case "overcast": T_apparent += 0.5; break;
+      case "cloudy":   T_apparent += 1.0; break;
+      case "sunny":    T_apparent += 1.3; break;
+      case "strong":   T_apparent += 2.0; break;
+    }
   }
 
   T_apparent = Math.round(T_apparent * 10) / 10;
