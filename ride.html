@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>騎行體感溫度</title>
+<style>
+  body { background-color:#000; color:#fff; font-family:Arial,sans-serif; padding:10px; max-width:480px; margin:auto; }
+  h1,h2 { text-align:center; color:#FFD700; }
+  label { display:block; margin-top:8px; font-size:16px; }
+  input, select { width:100%; padding:6px; margin-top:4px; margin-bottom:8px; border-radius:4px; border:none; font-size:16px; }
+  button { background-color:#444; color:#fff; padding:10px; width:100%; font-size:18px; border:none; border-radius:4px; cursor:pointer; }
+  button:hover { background-color:#666; }
+  #result { margin-top:20px; font-size:24px; color:#00FF00; text-align:center; }
+  #previousData { font-size:14px; margin-bottom:10px; color:#aaa; }
+</style>
+</head>
+<body>
+<h1>騎行體感溫度計算</h1>
+<h2>前一頁資料</h2>
+<div id="previousData">載入中...</div>
+
+<label>騎行速度:</label>
+<input type="number" id="rideSpeed" placeholder="請輸入騎行速度">
+<select id="rideSpeedUnit">
+  <option value="kmh">km/h</option>
+  <option value="mi">mi/h</option>
+</select>
+
+<label>騎行姿勢:</label>
+<select id="ridePosture">
+  <option value="upright">直立</option>
+  <option value="lean">傾斜</option>
+</select>
+
+<label>著衣厚度:</label>
+<select id="rideClothes">
+  <option value="light">薄</option>
+  <option value="medium">中</option>
+  <option value="thick">厚</option>
+</select>
+
+<label>路況環境:</label>
+<select id="rideEnv">
+  <option value="open">空曠</option>
+  <option value="shade">樹蔭</option>
+  <option value="city">城市街道</option>
+</select>
+
+<label>風向:</label>
+<select id="rideWindDir">
+  <option value="tail">順風</option>
+  <option value="head">逆風</option>
+  <option value="side">側風</option>
+</select>
+
+<button onclick="calculateRide()">計算騎行體感溫度</button>
+<div id="result"></div>
+
+<script>
+function windToMs(value, unit){
+  switch(unit){
+    case "kmh": return value/3.6;
+    case "mi": return value*0.44704;
+    default: return parseFloat(value);
+  }
+}
+
+function heatIndex(T,H){ return T + 0.33*(H/100)*T; }
+
+window.onload=function(){
+  const data = JSON.parse(sessionStorage.getItem("rideInput"));
+  if(data){
+    document.getElementById("previousData").innerHTML =
+      `氣溫: ${data.temp} ${data.tempUnit}<br>`+
+      `濕度: ${data.humidity} %<br>`+
+      `風速: ${data.wind} ${data.windUnit}<br>`+
+      `陣風: ${data.gust} ${data.gustUnit}<br>`+
+      `天氣: ${data.weather}<br>`+
+      `降水: ${data.precipIntensity}`;
+  }
+}
+
+function calculateRide(){
+  const data = JSON.parse(sessionStorage.getItem("rideInput"));
+  if(!data){ document.getElementById("result").textContent="無前頁資料"; return; }
+
+  let T=parseFloat(data.temp);
+  if(data.tempUnit==="F") T=(T-32)*5/9;
+  const H=parseFloat(data.humidity);
+  let V=parseFloat(data.wind);
+  V=windToMs(V,data.windUnit);
+  let G=parseFloat(data.gust);
+  G=windToMs(G,data.gustUnit);
+  const useGust=G>0;
+  let effectiveWind=useGust?(V+G)/2:V;
+
+  // 騎行速度修正
+  let rideSpeed=parseFloat(document.getElementById("rideSpeed").value);
+  const rideSpeedUnit=document.getElementById("rideSpeedUnit").value;
+  rideSpeed=windToMs(rideSpeed,rideSpeedUnit);
+
+  // 騎行姿勢修正
+  const posture=document.getElementById("ridePosture").value;
+  let postureFactor=(posture==="upright")?1.0:0.9;
+
+  // 衣著厚度修正
+  const clothes=document.getElementById("rideClothes").value;
+  let clothesFactor=(clothes==="light")?1.0:(clothes==="medium")?0.95:0.9;
+
+  // 環境修正
+  const env=document.getElementById("rideEnv").value;
+  let envFactor=(env==="open")?1.0:(env==="shade")?0.98:0.96;
+
+  // 風向修正
+  const windDir=document.getElementById("rideWindDir").value;
+  let dirFactor=(windDir==="tail")?0.9:(windDir==="head")?1.1:1.0;
+
+  let V_ride=(effectiveWind+rideSpeed)*postureFactor*clothesFactor*envFactor*dirFactor;
+
+  // 低溫濕度修正
+  const T_cold=T-0.7*V_ride-0.12*(H/100)*(T-10);
+  const T_high=heatIndex(T,H);
+  let T_app;
+  if(T<=15) T_app=T_cold;
+  else if(T>=27) T_app=T_high;
+  else { const w_cold=(27-T)/12; T_app=w_cold*T_cold+(1-w_cold)*T_high; }
+
+  // 日照簡單低估為0
+  let T_final=T_app;
+  T_final=Math.round(T_final*10)/10;
+  document.getElementById("result").textContent=`騎行體感溫度：約 ${T_final} °C`;
