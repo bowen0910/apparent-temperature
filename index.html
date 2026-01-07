@@ -7,9 +7,11 @@
 <style>
   body { background-color:#000; color:#fff; font-family:Arial,sans-serif; padding:10px; max-width:480px; margin:auto; position:relative; }
   h1 { color:#FFD700; text-align:center; margin-bottom:20px; font-size:24px; }
-  label { display:block; margin-top:8px; font-size:16px; }
-  input, select { width:100%; padding:6px; margin-top:4px; margin-bottom:8px; border-radius:4px; border:none; font-size:16px; }
-  button { background-color:#444; color:#fff; padding:10px; width:100%; font-size:18px; border:none; border-radius:4px; cursor:pointer; }
+  label { display:block; margin-top:12px; font-size:16px; }
+  .input-row { display:flex; gap:6px; align-items:center; margin-top:4px; }
+  .input-row input { flex:1; padding:6px; border-radius:4px; border:none; font-size:16px; }
+  .input-row select { width:30%; padding:6px; border-radius:4px; border:none; font-size:16px; }
+  button { background-color:#444; color:#fff; padding:10px; width:100%; font-size:18px; border:none; border-radius:4px; cursor:pointer; margin-top:12px; }
   button:hover { background-color:#666; }
   #result { margin-top:20px; font-size:24px; color:#00FF00; text-align:center; }
   #note { margin-top:10px; font-size:12px; color:#888; text-align:center; }
@@ -17,69 +19,78 @@
   summary { cursor:pointer; font-weight:bold; }
   #precipitationContainer { display:none; }
   #version { position:absolute; top:10px; right:10px; font-size:12px; color:#888; }
+  hr { border:0; border-top:1px solid #333; margin:15px 0; }
 </style>
 </head>
 <body>
-<div id="version">v1.0.4</div>
+<div id="version">v1.0.5</div>
 
 <h1>體感溫度計算機</h1>
 
 <label>氣溫:</label>
-<input type="number" id="temp" placeholder="請輸入氣溫">
-<select id="tempUnit">
-  <option value="C">攝氏 (°C)</option>
-  <option value="F">華氏 (°F)</option>
-</select>
+<div class="input-row">
+  <input type="number" id="temp" placeholder="請輸入氣溫">
+  <select id="tempUnit">
+    <option value="C">°C</option>
+    <option value="F">°F</option>
+  </select>
+</div>
 
 <label>濕度 (%):</label>
-<input type="number" id="humidity" placeholder="請輸入濕度">
+<div class="input-row">
+  <input type="number" id="humidity" placeholder="請輸入濕度">
+</div>
 
 <label>風速:</label>
-<input type="number" id="wind" placeholder="請輸入風速">
-<select id="windUnit">
-  <option value="ms">m/s</option>
-  <option value="kmh">km/h</option>
-  <option value="kt">節 (kt)</option>
-  <option value="beaufort">蒲式風級</option>
-</select>
+<div class="input-row">
+  <input type="number" id="wind" placeholder="請輸入風速">
+  <select id="windUnit">
+    <option value="ms">m/s</option>
+    <option value="kmh">km/h</option>
+    <option value="kt">節</option>
+    <option value="beaufort">蒲式風級</option>
+  </select>
+</div>
 
 <label>陣風:</label>
-<input type="number" id="gust" placeholder="如有請輸入陣風，無則填0">
-<select id="gustUnit">
-  <option value="ms">m/s</option>
-  <option value="kmh">km/h</option>
-  <option value="kt">節 (kt)</option>
-  <option value="beaufort">蒲式風級</option>
-</select>
+<div class="input-row">
+  <input type="number" id="gust" placeholder="如有請輸入陣風，無則填0">
+  <select id="gustUnit">
+    <option value="ms">m/s</option>
+    <option value="kmh">km/h</option>
+    <option value="kt">節</option>
+    <option value="beaufort">蒲式風級</option>
+  </select>
+</div>
+
+<hr>
 
 <label>天氣情況:</label>
-<select id="weather" onchange="togglePrecipitation()">
-  <option value="">未選擇</option>
-
-  <optgroup label="日照/天氣">
+<div class="input-row">
+  <select id="weather" onchange="togglePrecipitation()" style="flex:1;">
+    <option value="">未選擇</option>
     <option value="night">夜間 (無日照)</option>
     <option value="overcast">陰天</option>
     <option value="cloudy">多雲</option>
     <option value="sunny">晴天</option>
     <option value="strong">強烈日照</option>
-  </optgroup>
-
-  <optgroup label="降水">
     <option value="rain">下雨</option>
     <option value="snow">下雪</option>
-  </optgroup>
-</select>
+  </select>
+</div>
 
 <div id="precipitationContainer">
   <label id="precipLabel">降雨強度:</label>
-  <select id="precipIntensity">
-    <option value="">請選擇強度</option>
-    <option value="lightest">毛毛/小</option>
-    <option value="light">小</option>
-    <option value="moderate">中</option>
-    <option value="heavy">大</option>
-    <option value="extreme">豪</option>
-  </select>
+  <div class="input-row">
+    <select id="precipIntensity" style="flex:1;">
+      <option value="">請選擇強度</option>
+      <option value="lightest">毛毛/小</option>
+      <option value="light">小</option>
+      <option value="moderate">中</option>
+      <option value="heavy">大</option>
+      <option value="extreme">豪</option>
+    </select>
+  </div>
 </div>
 
 <button onclick="calculate()">計算體感溫度</button>
@@ -89,7 +100,7 @@
 <details>
 <summary>計算公式</summary>
 1. **低溫風寒公式 (T ≤ 15°C)**：<br>
-T_cold = T - 0.7*V_eff - 0.12*(H/100)*(T-10) （濕度影響降低）<br><br>
+T_cold = T - 0.7*V_eff - 0.12*(H/100)*(T-10)<br><br>
 
 2. **高溫公式 (T ≥ 27°C)**：<br>
 T_high = T + 0.33*(H/100)*T<br><br>
@@ -99,13 +110,13 @@ T_app = w_cold*T_cold + (1-w_cold)*T_high ，其中 w_cold = (27-T)/12<br><br>
 
 4. **日照修正公式**：<br>
 - 低溫區：夜間 -0.2 / 陰天 0 / 多雲 -0.1 / 晴天 0.6 / 強烈日照 1.2<br>
-- 高溫區強烈日照上限限制 +2°C，避免體感溫度過高<br>
+- 高溫區強烈日照上限限制 +2°C<br>
 T_app = T_app + 日照修正值<br><br>
 
-5. **降雨及降雪影響溫度之公式**：<br>
+5. **降雨及降雪影響溫度公式**：<br>
 F_precip = 降雨或降雪係數 (依強度及溫度區間)<br><br>
 
-6. **最終體感溫度計算公式**：<br>
+6. **最終體感溫度**：<br>
 T_final = T_app + F_precip ，四捨五入至小數點第一位
 </details>
 
@@ -114,7 +125,7 @@ T_final = T_app + F_precip ，四捨五入至小數點第一位
 
 <script>
 function beaufortToMs(B) { return 0.836 * Math.pow(B, 1.5); }
-function windToMs(value, unit) {
+function windToMs(value, unit){
   switch(unit){
     case "ms": return value;
     case "kmh": return value/3.6;
@@ -125,16 +136,16 @@ function windToMs(value, unit) {
 }
 function heatIndex(T,H){ return T + 0.33*(H/100)*T; }
 
-function togglePrecipitation() {
-  const weather = document.getElementById("weather").value;
-  const container = document.getElementById("precipitationContainer");
-  const label = document.getElementById("precipLabel");
+function togglePrecipitation(){
+  const weather=document.getElementById("weather").value;
+  const container=document.getElementById("precipitationContainer");
+  const label=document.getElementById("precipLabel");
   if(weather==="rain"){ container.style.display="block"; label.textContent="降雨強度:"; }
   else if(weather==="snow"){ container.style.display="block"; label.textContent="降雪強度:"; }
   else{ container.style.display="none"; document.getElementById("precipIntensity").value=""; }
 }
 
-function calculate() {
+function calculate(){
   let missing=[];
   let T=parseFloat(document.getElementById("temp").value);
   const tempUnit=document.getElementById("tempUnit").value;
@@ -174,7 +185,7 @@ function calculate() {
   } }
   else if(T<27){ switch(weather){
     case "night": T_app+=0; break; 
-    case "overcast": T_app+=0.5; break;
+    case "overcast": T_app+=0.5; break; 
     case "cloudy": T_app+=1.5; break; 
     case "sunny": T_app+=2.5; break; 
     case "strong": T_app+=4.0; break; 
