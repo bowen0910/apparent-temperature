@@ -82,7 +82,7 @@
 <details>
 <summary>計算公式</summary>
 1. **低溫風寒公式 (T ≤ 15°C)**：<br>
-T_cold = T - 0.7*V_eff - 0.2*(H/100)*(T-10)<br><br>
+T_cold = T - 0.7*V_eff - 0.12*(H/100)*(T-10) （濕度影響降低）<br><br>
 
 2. **高溫公式 (T ≥ 27°C)**：<br>
 T_high = T + 0.33*(H/100)*T<br><br>
@@ -91,6 +91,7 @@ T_high = T + 0.33*(H/100)*T<br><br>
 T_app = w_cold*T_cold + (1-w_cold)*T_high ，其中 w_cold = (27-T)/12<br><br>
 
 4. **日照修正公式**：<br>
+- 高溫區強烈日照上限限制 +2°C，避免體感溫度過高<br>
 T_app = T_app + 日照修正值 (依溫度區間及天氣類型)<br><br>
 
 5. **降雨及降雪影響溫度之公式**：<br>
@@ -102,7 +103,7 @@ T_final = T_app + F_precip ，四捨五入至小數點第一位
 
 <p id="note">體感溫度僅供參考，實際感受因個人體質、衣著、活動量、日照、降水及風向而有所差異。</p>
 <p id="note">製作：夜ゞ無尾熊</p>
-<p id="note">版本號：v1.0.0</p>
+<p id="note">版本號：v1.0.1</p>
 
 <script>
 function beaufortToMs(B) { return 0.836 * Math.pow(B, 1.5); }
@@ -150,14 +151,15 @@ function calculate() {
   if(useGust) G=windToMs(G, gustUnit);
   let effectiveWind=useGust?(V+G)/2:V;
 
-  const T_cold=T-0.7*effectiveWind-0.2*(H/100)*(T-10);
+  // 低溫濕度權重降低
+  const T_cold=T-0.7*effectiveWind-0.12*(H/100)*(T-10);
   const T_high=heatIndex(T,H);
   let T_app;
   if(T<=15) T_app=T_cold;
   else if(T>=27) T_app=T_high;
   else { const w_cold=(27-T)/12; T_app=w_cold*T_cold+(1-w_cold)*T_high; }
 
-  // 日照修正
+  // 日照修正（高溫強烈日照上限限制）
   if(T<=15){ switch(weather){
     case "night": T_app+=0; break; case "overcast": T_app+=-0.5; break;
     case "cloudy": T_app+=-0.2; break; case "sunny": T_app+=0.5; break;
