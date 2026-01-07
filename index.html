@@ -20,10 +20,11 @@
   #precipitationContainer { display:none; }
   #version { position:absolute; top:10px; right:10px; font-size:12px; color:#888; }
   hr { border:0; border-top:1px solid #333; margin:15px 0; }
+  .group-label { font-weight:bold; margin-top:8px; color:#FFD700; }
 </style>
 </head>
 <body>
-<div id="version">v1.0.5</div>
+<div id="version">v1.0.6</div>
 
 <h1>體感溫度計算機</h1>
 
@@ -67,15 +68,22 @@
 
 <hr>
 
-<label>天氣情況:</label>
+<label class="group-label">光照 / 雲量:</label>
 <div class="input-row">
-  <select id="weather" onchange="togglePrecipitation()" style="flex:1;">
+  <select id="weatherLight" style="flex:1;" onchange="togglePrecipitation()">
     <option value="">未選擇</option>
     <option value="night">夜間 (無日照)</option>
     <option value="overcast">陰天</option>
     <option value="cloudy">多雲</option>
     <option value="sunny">晴天</option>
     <option value="strong">強烈日照</option>
+  </select>
+</div>
+
+<label class="group-label">降水:</label>
+<div class="input-row">
+  <select id="weatherPrecip" style="flex:1;" onchange="togglePrecipitation()">
+    <option value="">未選擇</option>
     <option value="rain">下雨</option>
     <option value="snow">下雪</option>
   </select>
@@ -142,11 +150,11 @@ function windToMs(value, unit){
 function heatIndex(T,H){ return T + 0.33*(H/100)*T; }
 
 function togglePrecipitation(){
-  const weather=document.getElementById("weather").value;
+  const weatherPrecip=document.getElementById("weatherPrecip").value;
   const container=document.getElementById("precipitationContainer");
   const label=document.getElementById("precipLabel");
-  if(weather==="rain"){ container.style.display="block"; label.textContent="降雨強度:"; }
-  else if(weather==="snow"){ container.style.display="block"; label.textContent="降雪強度:"; }
+  if(weatherPrecip==="rain"){ container.style.display="block"; label.textContent="降雨強度:"; }
+  else if(weatherPrecip==="snow"){ container.style.display="block"; label.textContent="降雪強度:"; }
   else{ container.style.display="none"; document.getElementById("precipIntensity").value=""; }
 }
 
@@ -157,7 +165,8 @@ function calculate(){
   const H=parseFloat(document.getElementById("humidity").value);
   let V=parseFloat(document.getElementById("wind").value);
   let G=parseFloat(document.getElementById("gust").value);
-  const weather=document.getElementById("weather").value;
+  const weatherLight=document.getElementById("weatherLight").value;
+  const weatherPrecip=document.getElementById("weatherPrecip").value;
   let P=document.getElementById("precipIntensity").value;
   const windUnit=document.getElementById("windUnit").value;
   const gustUnit=document.getElementById("gustUnit").value;
@@ -165,7 +174,7 @@ function calculate(){
   if(isNaN(T)) missing.push("氣溫");
   if(isNaN(H)) missing.push("濕度");
   if(isNaN(V)) missing.push("風速");
-  if((weather==="rain"||weather==="snow") && P==="") missing.push(weather==="rain"?"降雨強度":"降雪強度");
+  if((weatherPrecip==="rain"||weatherPrecip==="snow") && P==="") missing.push(weatherPrecip==="rain"?"降雨強度":"降雪強度");
   if(missing.length>0){ document.getElementById("result").textContent="缺少：" + missing.join("、"); return; }
 
   if(tempUnit==="F") T=(T-32)*5/9;
@@ -181,21 +190,21 @@ function calculate(){
   else if(T>=27) T_app=T_high;
   else { const w_cold=(27-T)/12; T_app=w_cold*T_cold+(1-w_cold)*T_high; }
 
-  if(T<=15){ switch(weather){
+  if(T<=15){ switch(weatherLight){
     case "night": T_app+=-0.2; break; 
     case "overcast": T_app+=0; break;
     case "cloudy": T_app+=-0.1; break; 
     case "sunny": T_app+=0.6; break; 
     case "strong": T_app+=1.2; break; 
   } }
-  else if(T<27){ switch(weather){
+  else if(T<27){ switch(weatherLight){
     case "night": T_app+=0; break; 
     case "overcast": T_app+=0.5; break; 
     case "cloudy": T_app+=1.5; break; 
     case "sunny": T_app+=2.5; break; 
     case "strong": T_app+=4.0; break; 
   } }
-  else{ switch(weather){
+  else{ switch(weatherLight){
     case "night": T_app+=0; break; 
     case "overcast": T_app+=0.5; break;
     case "cloudy": T_app+=1.0; break; 
@@ -209,11 +218,11 @@ function calculate(){
   const snowFactor={"lightest":-1.2,"light":-1.2,"moderate":-2.2,"heavy":-3.3,"extreme":-4.2};
 
   let F_precip=0;
-  if(weather==="rain"){
+  if(weatherPrecip==="rain"){
     if(T<=15) F_precip=rainFactorLow[P]||0;
     else if(T<27) F_precip=rainFactorMid[P]||0;
     else F_precip=rainFactorHigh[P]||0;
-  } else if(weather==="snow"){
+  } else if(weatherPrecip==="snow"){
     if(T >= 10){
       F_precip = 0;
       document.getElementById("result").textContent =
