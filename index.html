@@ -174,8 +174,12 @@ function calculate() {
     else if(T<27) F_precip=rainFactorMid[P]||0;
     else F_precip=rainFactorHigh[P]||0;
   } else if(weather==="snow"){
-    if(T>=10){ F_precip=0; document.getElementById("result").textContent="溫度過高無法構成降雪條件"; return; }
-    else F_precip=snowFactor[P]||0;
+    if(T >= 10){
+      F_precip = 0;
+      document.getElementById("result").textContent =
+        "溫度過高 (" + T.toFixed(1) + "°C)，無法形成降雪條件，請選擇降雨或其他天氣。";
+      return;
+    } else F_precip=snowFactor[P]||0;
   }
 
   let T_final=T_app+F_precip;
