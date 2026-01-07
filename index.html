@@ -76,13 +76,30 @@
 </div>
 
 <button onclick="calculate()">計算體感溫度</button>
-<button onclick="goRidePage()">點我計算騎行時體感溫度</button>
 
 <div id="result"></div>
 
 <details>
 <summary>計算公式</summary>
-<!-- 保留你原本公式 -->
+1. **低溫風寒公式 (T ≤ 15°C)**：<br>
+T_cold = T - 0.7*V_eff - 0.12*(H/100)*(T-10) （濕度影響降低）<br><br>
+
+2. **高溫公式 (T ≥ 27°C)**：<br>
+T_high = T + 0.33*(H/100)*T<br><br>
+
+3. **線性過渡區公式 (15°C < T < 27°C)**：<br>
+T_app = w_cold*T_cold + (1-w_cold)*T_high ，其中 w_cold = (27-T)/12<br><br>
+
+4. **日照修正公式**：<br>
+- 低溫區：夜間 -0.2 / 陰天 0 / 多雲 -0.1 / 晴天 0.6 / 強烈日照 1.2<br>
+- 高溫區強烈日照上限限制 +2°C，避免體感溫度過高<br>
+T_app = T_app + 日照修正值<br><br>
+
+5. **降雨及降雪影響溫度之公式**：<br>
+F_precip = 降雨或降雪係數 (依強度及溫度區間)<br><br>
+
+6. **最終體感溫度計算公式**：<br>
+T_final = T_app + F_precip ，四捨五入至小數點第一位
 </details>
 
 <p id="note">體感溫度僅供參考，實際感受因個人體質、衣著、活動量、日照、降水及風向而有所差異。</p>
@@ -91,7 +108,7 @@
 
 <script>
 function beaufortToMs(B) { return 0.836 * Math.pow(B, 1.5); }
-function windToMs(value, unit){
+function windToMs(value, unit) {
   switch(unit){
     case "ms": return value;
     case "kmh": return value/3.6;
@@ -101,6 +118,7 @@ function windToMs(value, unit){
   }
 }
 function heatIndex(T,H){ return T + 0.33*(H/100)*T; }
+
 function togglePrecipitation() {
   const weather = document.getElementById("weather").value;
   const container = document.getElementById("precipitationContainer");
@@ -109,6 +127,7 @@ function togglePrecipitation() {
   else if(weather==="snow"){ container.style.display="block"; label.textContent="降雪強度:"; }
   else{ container.style.display="none"; document.getElementById("precipIntensity").value=""; }
 }
+
 function calculate() {
   let missing=[];
   let T=parseFloat(document.getElementById("temp").value);
@@ -120,68 +139,73 @@ function calculate() {
   let P=document.getElementById("precipIntensity").value;
   const windUnit=document.getElementById("windUnit").value;
   const gustUnit=document.getElementById("gustUnit").value;
+
   if(isNaN(T)) missing.push("氣溫");
   if(isNaN(H)) missing.push("濕度");
   if(isNaN(V)) missing.push("風速");
   if((weather==="rain"||weather==="snow") && P==="") missing.push(weather==="rain"?"降雨強度":"降雪強度");
   if(missing.length>0){ document.getElementById("result").textContent="缺少：" + missing.join("、"); return; }
+
   if(tempUnit==="F") T=(T-32)*5/9;
   V=windToMs(V, windUnit);
   let useGust=!isNaN(G)&&G>0;
   if(useGust) G=windToMs(G, gustUnit);
   let effectiveWind=useGust?(V+G)/2:V;
+
+  // 低溫濕度權重降低
   const T_cold=T-0.7*effectiveWind-0.12*(H/100)*(T-10);
   const T_high=heatIndex(T,H);
   let T_app;
   if(T<=15) T_app=T_cold;
   else if(T>=27) T_app=T_high;
   else { const w_cold=(27-T)/12; T_app=w_cold*T_cold+(1-w_cold)*T_high; }
-  // 日照修正
+
+  // 日照修正（低溫區調整後）
   if(T<=15){ switch(weather){
-    case "night": T_app+=-0.2; break; case "overcast": T_app+=0; break;
-    case "cloudy": T_app+=-0.1; break; case "sunny": T_app+=0.6; break; case "strong": T_app+=1.2; break; } }
+    case "night": T_app+=-0.2; break; 
+    case "overcast": T_app+=0; break;
+    case "cloudy": T_app+=-0.1; break; 
+    case "sunny": T_app+=0.6; break; 
+    case "strong": T_app+=1.2; break; 
+  } }
   else if(T<27){ switch(weather){
-    case "night": T_app+=0; break; case "overcast": T_app+=0.5; break;
-    case "cloudy": T_app+=1.5; break; case "sunny": T_app+=2.5; break; case "strong": T_app+=4.0; break; } }
+    case "night": T_app+=0; break; 
+    case "overcast": T_app+=0.5; break;
+    case "cloudy": T_app+=1.5; break; 
+    case "sunny": T_app+=2.5; break; 
+    case "strong": T_app+=4.0; break; 
+  } }
   else{ switch(weather){
-    case "night": T_app+=0; break; case "overcast": T_app+=0.5; break;
-    case "cloudy": T_app+=1.0; break; case "sunny": T_app+=1.3; break; case "strong": T_app+=2.0; break; } }
+    case "night": T_app+=0; break; 
+    case "overcast": T_app+=0.5; break; 
+    case "cloudy": T_app+=1.0; break; 
+    case "sunny": T_app+=1.3; break; 
+    case "strong": T_app+=2.0; break; 
+  } }
+
+  // 降雨/降雪係數
   const rainFactorLow={"lightest":-0.6,"light":-0.6,"moderate":-1.4,"heavy":-2.3,"extreme":-3.2};
   const rainFactorMid={"lightest":-0.3,"light":-0.3,"moderate":-0.7,"heavy":-1.5,"extreme":-2.0};
   const rainFactorHigh={"lightest":-0.1,"light":-0.1,"moderate":-0.3,"heavy":-0.7,"extreme":-1.0};
   const snowFactor={"lightest":-1.2,"light":-1.2,"moderate":-2.2,"heavy":-3.3,"extreme":-4.2};
+
   let F_precip=0;
   if(weather==="rain"){
     if(T<=15) F_precip=rainFactorLow[P]||0;
     else if(T<27) F_precip=rainFactorMid[P]||0;
     else F_precip=rainFactorHigh[P]||0;
   } else if(weather==="snow"){
-    if(T >= 10){ F_precip = 0;
+    if(T >= 10){
+      F_precip = 0;
       document.getElementById("result").textContent =
         "溫度過高 (" + T.toFixed(1) + "°C)，無法形成降雪條件，請選擇降雨或其他天氣。";
       return;
     } else F_precip=snowFactor[P]||0;
   }
+
   let T_final=T_app+F_precip;
   T_final=Math.round(T_final*10)/10;
   document.getElementById("result").textContent=`體感溫度：約 ${T_final} °C`;
-}
-
-// 跳轉到騎行頁
-function goRidePage(){
-  const data={
-    temp:document.getElementById("temp").value,
-    tempUnit:document.getElementById("tempUnit").value,
-    humidity:document.getElementById("humidity").value,
-    wind:document.getElementById("wind").value,
-    windUnit:document.getElementById("windUnit").value,
-    gust:document.getElementById("gust").value,
-    gustUnit:document.getElementById("gustUnit").value,
-    weather:document.getElementById("weather").value,
-    precipIntensity:document.getElementById("precipIntensity").value
-  };
-  sessionStorage.setItem("rideInput", JSON.stringify(data));
-  window.location.href="ride.html";
 }
 </script>
 </body>
