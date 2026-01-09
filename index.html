@@ -14,7 +14,7 @@
   button { background-color:#444; color:#fff; padding:10px; width:100%; font-size:18px; border:none; border-radius:4px; cursor:pointer; margin-top:12px; }
   button:hover { background-color:#666; }
   #result { margin-top:20px; font-size:24px; color:#00FF00; text-align:center; }
-  #note { margin-top:10px; font-size:12px; color:#888; text-align:center; }
+  .note { margin-top:10px; font-size:12px; color:#888; text-align:center; }
   details { margin-top:15px; font-size:12px; color:#aaa; }
   summary { cursor:pointer; font-weight:bold; }
   #precipitationContainer { display:none; }
@@ -23,7 +23,7 @@
 </style>
 </head>
 <body>
-<div id="version">v1.1.2</div>
+<div id="version">v1.1.3</div>
 
 <h1>體感溫度計算機</h1>
 
@@ -116,7 +116,6 @@
 
 <div id="result"></div>
 
-<!-- 恢復底部小字、提醒和公式 -->
 <details>
 <summary style="font-weight:bold;">計算公式</summary>
 <p><b>1. 低溫風寒公式 (T ≤ 15°C)：</b><br>
@@ -140,8 +139,8 @@ F_precip = 降雨或降雪係數 (依強度及溫度區間)</p>
 T_final = T_app + F_precip ，四捨五入至小數點第一位</p>
 </details>
 
-<p id="note">本網站計算之體感溫度僅供參考，實際感受會因個人體質、衣著、活動量、日照、降水及風向等等因素而有所差異。</p>
-<p id="note">設計者：夜ゞ無尾熊</p>
+<p class="note">本網站計算之體感溫度僅供參考，實際感受會因個人體質、衣著、活動量、日照、降水及風向等等因素而有所差異。</p>
+<p class="note">設計者：夜ゞ無尾熊</p>
 
 <script>
 function beaufortToMs(B){ return 0.836 * Math.pow(B,1.5); }
@@ -247,13 +246,31 @@ function calculate(){
 
   T_app+=sunCloudAdj;
 
-  document.getElementById("result").textContent=`體感溫度：約 ${Math.round(T_app*10)/10} °C`;
+  // 降雨/降雪影響
+  const rainFactorLow={"lightest":-0.6,"light":-0.6,"moderate":-1.4,"heavy":-2.3,"extreme":-3.2};
+  const rainFactorMid={"lightest":-0.3,"light":-0.3,"moderate":-0.7,"heavy":-1.5,"extreme":-2.0};
+  const rainFactorHigh={"lightest":-0.1,"light":-0.1,"moderate":-0.3,"heavy":-0.7,"extreme":-1.0};
+  const snowFactor={"lightest":-1.2,"light":-1.2,"moderate":-2.2,"heavy":-3.3,"extreme":-4.2};
+
+  let F_precip=0;
+  if(precip==="rain"){
+    if(T<=15) F_precip=rainFactorLow[P]||0;
+    else if(T<27) F_precip=rainFactorMid[P]||0;
+    else F_precip=rainFactorHigh[P]||0;
+  } else if(precip==="snow"){
+    if(T >= 10){
+      F_precip = 0;
+      document.getElementById("result").textContent =
+        "溫度過高 (" + T.toFixed(1) + "°C)，無法形成降雪條件，請選擇降雨或其他天氣。";
+      return;
+    } else F_precip=snowFactor[P]||0;
+  }
+
+  let T_final=T_app+F_precip;
+  T_final=Math.round(T_final*10)/10;
+  document.getElementById("result").textContent=`體感溫度：約 ${T_final} °C`;
 }
 </script>
-
-<!-- 恢復底部提醒和設計者小字 -->
-<p id="note">本網站計算之體感溫度僅供參考，實際感受會因個人體質、衣著、活動量、日照、降水及風向等等因素而有所差異。</p>
-<p id="note">設計者：夜ゞ無尾熊</p>
 
 </body>
 </html>
