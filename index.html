@@ -23,7 +23,7 @@
 </style>
 </head>
 <body>
-<div id="version">v1.1.9</div>
+<div id="version">v1.1.10</div>
 
 <h1>體感溫度計算機</h1>
 
@@ -213,63 +213,63 @@ function calculate(){
   else if(T>=27) T_app=T_high;
   else { const w_cold=(27-T)/12; T_app=w_cold*T_cold+(1-w_cold)*T_high; }
 
-  // 日照 + 雲量修正（精確值，依參考文獻修正）
+  // 日照 + 雲量修正（v1.1.10 夜間與傍晚低溫修正）
   let sunCloudAdj=0;
 
   if(T<=15){
-      if(sunlight==="night"){
-          if(cloud==="clear") sunCloudAdj=-0.30;
-          else if(cloud==="cloudy") sunCloudAdj=-0.10;
-          else if(cloud==="overcast") sunCloudAdj=0.10;
-      } else if(sunlight==="morning"){
-          if(cloud==="clear") sunCloudAdj=-0.40;
-          else if(cloud==="cloudy") sunCloudAdj=-0.20;
-          else if(cloud==="overcast") sunCloudAdj=0.00;
-      } else if(sunlight==="evening"){
-          if(cloud==="clear") sunCloudAdj=0.00;
-          else if(cloud==="cloudy") sunCloudAdj=0.00;
-          else if(cloud==="overcast") sunCloudAdj=-0.10;
-      } else if(sunlight==="day"){
-          if(cloud==="clear") sunCloudAdj=0.50;
-          else if(cloud==="cloudy") sunCloudAdj=0.10;
-          else if(cloud==="overcast") sunCloudAdj=0.00;
-      }
+    if(sunlight==="night"){  // 夜間
+        if(cloud==="clear") sunCloudAdj=-0.30;
+        else if(cloud==="cloudy") sunCloudAdj=-0.10;
+        else if(cloud==="overcast") sunCloudAdj=0.10;
+    } else if(sunlight==="morning"){ // 清晨
+        if(cloud==="clear") sunCloudAdj=-0.40;
+        else if(cloud==="cloudy") sunCloudAdj=-0.20;
+        else if(cloud==="overcast") sunCloudAdj=0.00;
+    } else if(sunlight==="evening"){ // 傍晚
+        if(cloud==="clear") sunCloudAdj=-0.10;
+        else if(cloud==="cloudy") sunCloudAdj=-0.05;
+        else if(cloud==="overcast") sunCloudAdj=-0.10;
+    } else if(sunlight==="day"){ // 白天
+        if(cloud==="clear") sunCloudAdj=0.50;
+        else if(cloud==="cloudy") sunCloudAdj=0.10;
+        else if(cloud==="overcast") sunCloudAdj=0.00;
+    }
   } else if(T<27){
-      if(sunlight==="night"){
-          if(cloud==="clear") sunCloudAdj=0.00;
-          else if(cloud==="cloudy") sunCloudAdj=0.00;
-          else if(cloud==="overcast") sunCloudAdj=-0.10;
-      } else if(sunlight==="morning"){
-          if(cloud==="clear") sunCloudAdj=-0.30;
-          else if(cloud==="cloudy") sunCloudAdj=-0.20;
-          else if(cloud==="overcast") sunCloudAdj=-0.05;
-      } else if(sunlight==="evening"){
-          if(cloud==="clear") sunCloudAdj=0.20;
-          else if(cloud==="cloudy") sunCloudAdj=0.10;
-          else if(cloud==="overcast") sunCloudAdj=0.05;
-      } else if(sunlight==="day"){
-          if(cloud==="clear") sunCloudAdj=1.20;
-          else if(cloud==="cloudy") sunCloudAdj=0.70;
-          else if(cloud==="overcast") sunCloudAdj=0.30;
-      }
+    if(sunlight==="night"){
+        if(cloud==="clear") sunCloudAdj=0.00;
+        else if(cloud==="cloudy") sunCloudAdj=0.00;
+        else if(cloud==="overcast") sunCloudAdj=-0.10;
+    } else if(sunlight==="morning"){
+        if(cloud==="clear") sunCloudAdj=-0.30;
+        else if(cloud==="cloudy") sunCloudAdj=-0.20;
+        else if(cloud==="overcast") sunCloudAdj=-0.05;
+    } else if(sunlight==="evening"){
+        if(cloud==="clear") sunCloudAdj=0.20;
+        else if(cloud==="cloudy") sunCloudAdj=0.10;
+        else if(cloud==="overcast") sunCloudAdj=0.05;
+    } else if(sunlight==="day"){
+        if(cloud==="clear") sunCloudAdj=1.20;
+        else if(cloud==="cloudy") sunCloudAdj=0.70;
+        else if(cloud==="overcast") sunCloudAdj=0.30;
+    }
   } else {
-      if(sunlight==="night"){
-          if(cloud==="clear") sunCloudAdj=0.10;
-          else if(cloud==="cloudy") sunCloudAdj=0.00;
-          else if(cloud==="overcast") sunCloudAdj=-0.05;
-      } else if(sunlight==="morning"){
-          if(cloud==="clear") sunCloudAdj=-0.10;
-          else if(cloud==="cloudy") sunCloudAdj=-0.05;
-          else if(cloud==="overcast") sunCloudAdj=0.00;
-      } else if(sunlight==="evening"){
-          if(cloud==="clear") sunCloudAdj=0.50;
-          else if(cloud==="cloudy") sunCloudAdj=0.30;
-          else if(cloud==="overcast") sunCloudAdj=0.10;
-      } else if(sunlight==="day"){
-          if(cloud==="clear") sunCloudAdj=1.50;
-          else if(cloud==="cloudy") sunCloudAdj=1.00;
-          else if(cloud==="overcast") sunCloudAdj=0.50;
-      }
+    if(sunlight==="night"){
+        if(cloud==="clear") sunCloudAdj=0.10;
+        else if(cloud==="cloudy") sunCloudAdj=0.00;
+        else if(cloud==="overcast") sunCloudAdj=-0.05;
+    } else if(sunlight==="morning"){
+        if(cloud==="clear") sunCloudAdj=-0.10;
+        else if(cloud==="cloudy") sunCloudAdj=-0.05;
+        else if(cloud==="overcast") sunCloudAdj=0.00;
+    } else if(sunlight==="evening"){
+        if(cloud==="clear") sunCloudAdj=0.50;
+        else if(cloud==="cloudy") sunCloudAdj=0.30;
+        else if(cloud==="overcast") sunCloudAdj=0.10;
+    } else if(sunlight==="day"){
+        if(cloud==="clear") sunCloudAdj=1.50;
+        else if(cloud==="cloudy") sunCloudAdj=1.00;
+        else if(cloud==="overcast") sunCloudAdj=0.50;
+    }
   }
 
   T_app += sunCloudAdj;
