@@ -23,7 +23,7 @@
 </style>
 </head>
 <body>
-<div id="version">v1.1.1</div>
+<div id="version">v1.1.2</div>
 
 <h1>體感溫度計算機</h1>
 
@@ -115,6 +115,33 @@
 <button onclick="calculate()">計算體感溫度</button>
 
 <div id="result"></div>
+
+<!-- 恢復底部小字、提醒和公式 -->
+<details>
+<summary style="font-weight:bold;">計算公式</summary>
+<p><b>1. 低溫風寒公式 (T ≤ 15°C)：</b><br>
+T_cold = T - 0.7*V_eff - 0.12*(H/100)*(T-10)</p>
+
+<p><b>2. 高溫公式 (T ≥ 27°C)：</b><br>
+T_high = T + 0.33*(H/100)*T</p>
+
+<p><b>3. 線性過渡區公式 (15°C < T < 27°C)：</b><br>
+T_app = w_cold*T_cold + (1-w_cold)*T_high ，其中 w_cold = (27-T)/12</p>
+
+<p><b>4. 日照與雲量修正公式：</b><br>
+- 日照時段: 夜間 / 清晨 / 傍晚 / 白天<br>
+- 雲量: 晴空 / 多雲 / 陰天<br>
+T_app = T_app + 日照雲量修正值 (人性化)</p>
+
+<p><b>5. 降雨及降雪影響溫度公式：</b><br>
+F_precip = 降雨或降雪係數 (依強度及溫度區間)</p>
+
+<p><b>6. 最終體感溫度：</b><br>
+T_final = T_app + F_precip ，四捨五入至小數點第一位</p>
+</details>
+
+<p id="note">本網站計算之體感溫度僅供參考，實際感受會因個人體質、衣著、活動量、日照、降水及風向等等因素而有所差異。</p>
+<p id="note">設計者：夜ゞ無尾熊</p>
 
 <script>
 function beaufortToMs(B){ return 0.836 * Math.pow(B,1.5); }
@@ -223,6 +250,10 @@ function calculate(){
   document.getElementById("result").textContent=`體感溫度：約 ${Math.round(T_app*10)/10} °C`;
 }
 </script>
+
+<!-- 恢復底部提醒和設計者小字 -->
+<p id="note">本網站計算之體感溫度僅供參考，實際感受會因個人體質、衣著、活動量、日照、降水及風向等等因素而有所差異。</p>
+<p id="note">設計者：夜ゞ無尾熊</p>
 
 </body>
 </html>
