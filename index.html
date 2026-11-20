@@ -28,7 +28,7 @@
 </style>
 </head>
 <body>
-<div id="version">v2.0.3</div>
+<div id="version">v2.1.1</div>
 
 <h1>體感溫度計算機</h1>
 
@@ -127,16 +127,12 @@
 <div id="envNotes"></div>
 
 <details>
-<summary>嚴格氣象計算公式說明</summary>
+<summary>氣象基準 ＋ 物理趨勢環境修正說明</summary>
 <p>
-1. <strong>風寒指數 (Wind Chill, NWS)</strong> — 適用 T &lt;= 10°C 且風速 &gt; 4.8 km/h：<br>
-   WC = 13.12 + 0.6215*T - 11.37*(V_kmh^0.16) + 0.3965*T*(V_kmh^0.16)<br>
-2. <strong>熱指數 (Heat Index, Rothfusz)</strong> — 適用高溫區間 (T_F &gt;= 80°F)：<br>
-   以 °F 與 RH(%) 計算 Rothfusz 迴歸式，並依低濕/高濕條件作標準調整後轉回 °C。<br>
-3. <strong>表觀溫度 (Steadman Apparent Temperature)</strong> — 適用其餘溫和/過渡區間：<br>
-   e = (RH/100) * 6.105 * exp(17.27*T / (237.7 + T)) (hPa)<br>
-   AT = T + 0.33*e - 0.70*v_ms - 4.00<br>
-   (註：日照、雲量、陣風與降水保留填寫與狀態提示，不以主觀加減度數混入核心公式。)
+1. <strong>基準公式</strong>：低溫有風採 NWS 風寒指數 (T &lt;= 10°C 且風速 &gt; 4.8 km/h)；高溫採 Rothfusz 熱指數 (T_F &gt;= 80°F，低端平滑銜接)；其餘採 Steadman 表觀溫度。<br>
+2. <strong>日照 × 雲量修正</strong>：白天晴空 +1.8°C（氣溫 &gt;= 35°C 時乘 0.6 抑制過度疊加）、多雲 +0.7°C、陰天 0°C；清晨/傍晚晴空 +0.4°C、陰天 -0.2°C；夜間晴空 -0.8°C、多雲 -0.3°C。<br>
+3. <strong>降水強度修正</strong>：下雨依強度 -0.4 ~ -2.2°C（濕度 &gt; 85% 時蒸發冷卻乘 0.75）；下雪依強度 -0.7 ~ -2.5°C（氣溫達 10°C 防呆上限無法降雪）。<br>
+4. <strong>陣風修正</strong>：陣風高於平均風時，依風速差給予溫和瞬間氣流修正（上限 -1.0°C）。
 </p>
 </details>
 
@@ -201,6 +197,61 @@ function heatIndexF(T_F, RH) {
     hi += ((RH - 85) / 10) * ((87 - T_F) / 5);
   }
   return hi;
+}
+
+function getRadiationDelta(sunlight, cloud, tempC) {
+  const table = {
+    day: { clear: 1.8, cloudy: 0.7, overcast: 0.0 },
+    morning: { clear: 0.4, cloudy: 0.0, overcast: -0.2 },
+    evening: { clear: 0.4, cloudy: 0.0, overcast: -0.2 },
+    night: { clear: -0.8, cloudy: -0.3, overcast: 0.0 }
+  };
+  let delta = (table[sunlight] && table[sunlight][cloud] !== undefined)
+    ? table[sunlight][cloud]
+    : 0;
+  if (sunlight === "day" && cloud === "clear" && tempC >= 35 && delta > 0) {
+    delta *= 0.6;
+  }
+  return delta;
+}
+
+function getPrecipDelta(precip, intensity, rh) {
+  if (precip === "rain") {
+    const rainMap = {
+      lightest: -0.4,
+      light: -0.8,
+      moderate: -1.2,
+      heavy: -1.7,
+      extreme: -2.2
+    };
+    let delta = rainMap[intensity] || -0.8;
+    if (rh > 85) {
+      delta *= 0.75;
+    }
+    return delta;
+  }
+  if (precip === "snow") {
+    const snowMap = {
+      lightest: -0.7,
+      light: -1.1,
+      moderate: -1.5,
+      heavy: -2.0,
+      extreme: -2.5
+    };
+    return snowMap[intensity] || -1.1;
+  }
+  return 0;
+}
+
+function getIntensityLabel(code) {
+  const labels = {
+    lightest: "毛毛/小",
+    light: "小",
+    moderate: "中",
+    heavy: "大",
+    extreme: "豪"
+  };
+  return labels[code] || "";
 }
 
 function togglePrecipitation() {
@@ -307,48 +358,57 @@ function calculate() {
   }
 
   const T_F = cToF(T);
-  let appC;
+  let baseC;
   let formulaName;
 
   if (T <= 10 && vKmh > 4.8) {
-    appC = windChillC(T, vKmh);
-    formulaName = "採用公式：NWS 風寒指數 (Wind Chill)";
+    baseC = windChillC(T, vKmh);
+    formulaName = "基準：NWS 風寒指數 (Wind Chill)";
   } else if (T_F >= 80) {
     const hiF = heatIndexF(T_F, H);
     const rawHiC = fToC(hiF);
     const stC = steadmanAT_C(T, H, vMs);
     if (hiF < 80) {
       const blend = Math.max(0, Math.min(1, (T_F - 80) / 3));
-      appC = stC * (1 - blend) + rawHiC * blend;
-      formulaName = "採用公式：Heat Index / Steadman 過渡銜接";
+      baseC = stC * (1 - blend) + rawHiC * blend;
+      formulaName = "基準：Heat Index / Steadman 過渡銜接";
     } else {
-      appC = rawHiC;
-      formulaName = "採用公式：Rothfusz 熱指數 (Heat Index)";
+      baseC = rawHiC;
+      formulaName = "基準：Rothfusz 熱指數 (Heat Index)";
     }
   } else {
-    appC = steadmanAT_C(T, H, vMs);
-    formulaName = "採用公式：Steadman 表觀溫度 (Apparent Temperature)";
+    baseC = steadmanAT_C(T, H, vMs);
+    formulaName = "基準：Steadman 表觀溫度 (Apparent Temperature)";
   }
 
-  const T_final = Math.round(appC * 100) / 100;
+  const radDelta = getRadiationDelta(sunlight, cloud, T);
+  const precipDelta = getPrecipDelta(precip, P, H);
+  const gustDelta = (hasGust && gMs > vMs)
+    ? -Math.min(1.0, (gMs - vMs) * 0.10)
+    : 0;
+
+  const totalDelta = radDelta + precipDelta + gustDelta;
+  const finalC = baseC + totalDelta;
+
+  const T_final = Math.round(finalC * 100) / 100;
   const T_final_F = Math.round(cToF(T_final) * 100) / 100;
+  const deltaSign = totalDelta >= 0 ? "+" : "";
 
   resultEl.innerHTML = `體感溫度：約 ${T_final} °C<br><span style="font-size:15px;color:#9be79b;">(${T_final_F} °F)</span>`;
-  badgeEl.textContent = formulaName;
+  badgeEl.textContent = `${formulaName}（環境修正 ${deltaSign}${totalDelta.toFixed(2)} °C）`;
 
   const notes = [];
+  if (radDelta !== 0) {
+    const rSign = radDelta > 0 ? "+" : "";
+    notes.push(`日照雲量修正 ${rSign}${radDelta.toFixed(2)} °C`);
+  }
   if (hasGust && gMs > vMs) {
-    notes.push(`陣風達 ${gMs.toFixed(1)} m/s（高於平均風 ${vMs.toFixed(1)} m/s），瞬間風壓較強`);
+    notes.push(`陣風 ${gMs.toFixed(1)} m/s（高於平均風 ${vMs.toFixed(1)} m/s），修正 ${gustDelta.toFixed(2)} °C`);
   }
   if (precip === "rain") {
-    notes.push("目前有降雨，體感易因水分蒸發與衣物浸濕而偏涼");
+    notes.push(`降雨（${getIntensityLabel(P)}）修正 ${precipDelta.toFixed(2)} °C`);
   } else if (precip === "snow") {
-    notes.push("目前有降雪條件，請留意低溫與路面結冰風險");
-  }
-  if (sunlight === "day" && cloud === "clear") {
-    notes.push("白天晴空日照充足，戶外直射輻射會使實際體感高於陰影下數值");
-  } else if (sunlight === "night" && cloud === "clear") {
-    notes.push("夜間晴空輻射冷卻較明顯，清晨與深夜易偏涼");
+    notes.push(`降雪（${getIntensityLabel(P)}）修正 ${precipDelta.toFixed(2)} °C`);
   }
   notesEl.textContent = notes.join("；");
 }
