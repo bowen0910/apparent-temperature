@@ -28,7 +28,7 @@
 </style>
 </head>
 <body>
-<div id="version">v2.0.1</div>
+<div id="version">v2.0.2</div>
 
 <h1>體感溫度計算機</h1>
 
@@ -286,6 +286,11 @@ function calculate() {
   const vKmh = vMs * 3.6;
   const hasGust = !isNaN(G) && G > 0;
   const gMs = hasGust ? windToMs(G, gustUnit) : 0;
+
+  if (hasGust && gMs < vMs) {
+    resultEl.textContent = "陣風不可小於平均風速";
+    return;
+  }
 
   if (precip === "snow" && T >= 10) {
     resultEl.textContent = "溫度過高 (" + T.toFixed(1) + "°C，已達 10°C 防呆上限)，無法形成降雪條件";
