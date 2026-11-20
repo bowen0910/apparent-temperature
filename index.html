@@ -11,11 +11,16 @@
   .input-row { display:flex; gap:6px; align-items:center; margin-top:4px; }
   .input-row input { flex:1; padding:6px; border-radius:4px; border:none; font-size:16px; }
   .input-row select { width:30%; padding:6px; border-radius:4px; border:none; font-size:16px; }
-  button { background-color:#444; color:#fff; padding:10px; width:100%; font-size:18px; border:none; border-radius:4px; cursor:pointer; margin-top:12px; }
+  .btn-group { display:flex; gap:8px; margin-top:12px; }
+  button { background-color:#444; color:#fff; padding:10px; flex:1; font-size:18px; border:none; border-radius:4px; cursor:pointer; }
   button:hover { background-color:#666; }
-  #result { margin-top:20px; font-size:24px; color:#00FF00; text-align:center; }
+  button.reset-btn { background-color:#262626; flex:0.4; font-size:16px; }
+  button.reset-btn:hover { background-color:#3a3a3a; }
+  #result { margin-top:20px; font-size:24px; color:#00FF00; text-align:center; line-height:1.4; }
+  #formulaBadge { margin-top:6px; font-size:13px; color:#FFD700; text-align:center; }
+  #envNotes { margin-top:10px; font-size:13px; color:#ccc; text-align:center; line-height:1.5; }
   .note { margin-top:10px; font-size:12px; color:#888; text-align:center; }
-  details { margin-top:15px; font-size:12px; color:#aaa; }
+  details { margin-top:15px; font-size:12px; color:#aaa; line-height:1.5; }
   summary { cursor:pointer; font-weight:bold; }
   #precipitationContainer { display:none; }
   #version { position:absolute; top:10px; right:10px; font-size:12px; color:#888; }
@@ -23,28 +28,28 @@
 </style>
 </head>
 <body>
-<div id="version">v1.1.12</div>
+<div id="version">v2.0.1</div>
 
 <h1>體感溫度計算機</h1>
 
-<label>氣溫:</label>
+<label for="temp">氣溫:</label>
 <div class="input-row">
-  <input type="number" id="temp" placeholder="請輸入氣溫">
-  <select id="tempUnit">
+  <input type="number" id="temp" step="any" placeholder="請輸入氣溫">
+  <select id="tempUnit" aria-label="氣溫單位">
     <option value="C">°C</option>
     <option value="F">°F</option>
   </select>
 </div>
 
-<label>濕度 (%):</label>
+<label for="humidity">濕度 (%):</label>
 <div class="input-row">
-  <input type="number" id="humidity" placeholder="請輸入濕度" min="0" max="100">
+  <input type="number" id="humidity" step="any" placeholder="請輸入濕度" min="0" max="100">
 </div>
 
-<label>風速:</label>
+<label for="wind">風速:</label>
 <div class="input-row">
-  <input type="number" id="wind" placeholder="請輸入風速">
-  <select id="windUnit">
+  <input type="number" id="wind" step="any" placeholder="請輸入風速" min="0">
+  <select id="windUnit" aria-label="風速單位">
     <option value="ms">m/s (公尺/秒)</option>
     <option value="kmh">km/h (公里/小時)</option>
     <option value="mph">mph (英里/小時)</option>
@@ -53,10 +58,10 @@
   </select>
 </div>
 
-<label>陣風:</label>
+<label for="gust">陣風:</label>
 <div class="input-row">
-  <input type="number" id="gust" placeholder="如有請輸入陣風，無則填0或空白">
-  <select id="gustUnit">
+  <input type="number" id="gust" step="any" placeholder="如有請輸入陣風，無則填0或空白" min="0">
+  <select id="gustUnit" aria-label="陣風單位">
     <option value="ms">m/s (公尺/秒)</option>
     <option value="kmh">km/h (公里/小時)</option>
     <option value="mph">mph (英里/小時)</option>
@@ -67,7 +72,7 @@
 
 <hr>
 
-<label>日照時段:</label>
+<label for="sunlight">日照時段:</label>
 <div class="input-row">
   <select id="sunlight" style="flex:1;">
     <option value="">未選擇</option>
@@ -78,7 +83,7 @@
   </select>
 </div>
 
-<label>雲量:</label>
+<label for="cloud">雲量:</label>
 <div class="input-row">
   <select id="cloud" style="flex:1;">
     <option value="">未選擇</option>
@@ -88,7 +93,7 @@
   </select>
 </div>
 
-<label>降水:</label>
+<label for="precip">降水:</label>
 <div class="input-row">
   <select id="precip" onchange="togglePrecipitation()" style="flex:1;">
     <option value="">未選擇</option>
@@ -99,7 +104,7 @@
 </div>
 
 <div id="precipitationContainer">
-  <label id="precipLabel">降雨強度:</label>
+  <label id="precipLabel" for="precipIntensity">降雨強度:</label>
   <div class="input-row">
     <select id="precipIntensity" style="flex:1;">
       <option value="">請選擇強度</option>
@@ -112,21 +117,26 @@
   </div>
 </div>
 
-<button onclick="calculate()">計算體感溫度</button>
+<div class="btn-group">
+  <button type="button" onclick="calculate()">計算體感溫度</button>
+  <button type="button" class="reset-btn" onclick="resetForm()">清除</button>
+</div>
 
 <div id="result"></div>
+<div id="formulaBadge"></div>
+<div id="envNotes"></div>
 
 <details>
-<summary style="font-weight:bold;">計算公式 (單一公式簡化版)</summary>
+<summary>嚴格氣象計算公式說明</summary>
 <p>
-T_final = round2(
-  {w_cold*(T - 0.7*V_eff - 0.12*(H/100)*(T-10)) + (1-w_cold)*(T + 0.33*(H/100)*T)}
-  + 日照雲量修正值
-  + 降雨/降雪修正值
-)
-，<br>
-其中 T = 氣溫(°C), H = 濕度(%), V_eff = 有效風速(m/s), <br>
-w_cold = (T < 15 ? 1 : (T>27 ? 0 : (27-T)/12))
+1. <strong>風寒指數 (Wind Chill, NWS)</strong> — 適用 T &lt;= 10°C 且風速 &gt; 4.8 km/h：<br>
+   WC = 13.12 + 0.6215*T - 11.37*(V_kmh^0.16) + 0.3965*T*(V_kmh^0.16)<br>
+2. <strong>熱指數 (Heat Index, Rothfusz)</strong> — 適用高溫區間 (T_F &gt;= 80°F)：<br>
+   以 °F 與 RH(%) 計算 Rothfusz 迴歸式，並依低濕/高濕條件作標準調整後轉回 °C。<br>
+3. <strong>表觀溫度 (Steadman Apparent Temperature)</strong> — 適用其餘溫和/過渡區間：<br>
+   e = (RH/100) * 6.105 * exp(17.27*T / (237.7 + T)) (hPa)<br>
+   AT = T + 0.33*e - 0.70*v_ms - 4.00<br>
+   (註：日照、雲量、陣風與降水保留填寫與狀態提示，不以主觀加減度數混入核心公式。)
 </p>
 </details>
 
@@ -134,103 +144,191 @@ w_cold = (T < 15 ? 1 : (T>27 ? 0 : (27-T)/12))
 <p class="note">設計者：夜ゞ無尾熊</p>
 
 <script>
-function beaufortToMs(B){ return 0.836 * Math.pow(B,1.5); }
-function windToMs(value, unit){
-  switch(unit){
+function beaufortToMs(B) {
+  return B <= 0 ? 0 : 0.836 * Math.pow(B, 1.5);
+}
+
+function windToMs(value, unit) {
+  switch (unit) {
     case "ms": return value;
-    case "kmh": return value/3.6;
-    case "kt": return value*0.514444;
+    case "kmh": return value / 3.6;
+    case "kt": return value * 0.514444;
     case "beaufort": return beaufortToMs(value);
-    case "mph": return value*0.44704;
+    case "mph": return value * 0.44704;
     default: return value;
   }
 }
-function heatIndex(T,H){ return T + 0.33*(H/100)*T; }
-function togglePrecipitation(){
-  const precip=document.getElementById("precip").value;
-  const container=document.getElementById("precipitationContainer");
-  const label=document.getElementById("precipLabel");
-  if(precip==="rain"){ container.style.display="block"; label.textContent="降雨強度:"; }
-  else if(precip==="snow"){ container.style.display="block"; label.textContent="降雪強度:"; }
-  else { container.style.display="none"; document.getElementById("precipIntensity").value=""; }
+
+function cToF(c) {
+  return c * 9 / 5 + 32;
 }
 
-function calculate(){
-  let missing=[];
-  let T=parseFloat(document.getElementById("temp").value);
-  const tempUnit=document.getElementById("tempUnit").value;
-  const H=parseFloat(document.getElementById("humidity").value);
-  let V=parseFloat(document.getElementById("wind").value);
-  let G=parseFloat(document.getElementById("gust").value);
-  const sunlight=document.getElementById("sunlight").value;
-  const cloud=document.getElementById("cloud").value;
-  const precip=document.getElementById("precip").value;
-  let P=document.getElementById("precipIntensity").value;
-  const windUnit=document.getElementById("windUnit").value;
-  const gustUnit=document.getElementById("gustUnit").value;
+function fToC(f) {
+  return (f - 32) * 5 / 9;
+}
 
-  if(isNaN(T)) missing.push("氣溫");
-  if(isNaN(H)) missing.push("濕度");
-  else if(H<0 || H>100){ document.getElementById("result").textContent="濕度請輸入 0~100 範圍內的數值"; return; }
-  if(isNaN(V)) missing.push("風速");
-  if(precip==="") missing.push("降水");
-  if((precip==="rain"||precip==="snow") && P==="") missing.push(precip==="rain"?"降雨強度":"降雪強度");
-  if(sunlight==="") missing.push("日照時段");
-  if(cloud==="") missing.push("雲量");
+function windChillC(T_c, V_kmh) {
+  const vPow = Math.pow(V_kmh, 0.16);
+  return 13.12 + 0.6215 * T_c - 11.37 * vPow + 0.3965 * T_c * vPow;
+}
 
-  if(missing.length>0){
-    document.getElementById("result").textContent="缺少：" + missing.join("、");
+function steadmanAT_C(T_c, RH, v_ms) {
+  const es = 6.105 * Math.exp((17.27 * T_c) / (237.7 + T_c));
+  const e = (RH / 100) * es;
+  return T_c + 0.33 * e - 0.70 * v_ms - 4.00;
+}
+
+function heatIndexF(T_F, RH) {
+  const simpleHI = 0.5 * (T_F + 61.0 + ((T_F - 68.0) * 1.2) + (RH * 0.094));
+  if (simpleHI < 80) {
+    return simpleHI;
+  }
+
+  let hi = -42.379
+    + 2.04901523 * T_F
+    + 10.14333127 * RH
+    - 0.22475541 * T_F * RH
+    - 0.00683783 * T_F * T_F
+    - 0.05481717 * RH * RH
+    + 0.00122874 * T_F * T_F * RH
+    + 0.00085282 * T_F * RH * RH
+    - 0.00000199 * T_F * T_F * RH * RH;
+
+  if (RH < 13 && T_F >= 80 && T_F <= 112) {
+    hi -= ((13 - RH) / 4) * Math.sqrt((17 - Math.abs(T_F - 95)) / 17);
+  } else if (RH > 85 && T_F >= 80 && T_F <= 87) {
+    hi += ((RH - 85) / 10) * ((87 - T_F) / 5);
+  }
+  return hi;
+}
+
+function togglePrecipitation() {
+  const precip = document.getElementById("precip").value;
+  const container = document.getElementById("precipitationContainer");
+  const label = document.getElementById("precipLabel");
+  if (precip === "rain") {
+    container.style.display = "block";
+    label.textContent = "降雨強度:";
+  } else if (precip === "snow") {
+    container.style.display = "block";
+    label.textContent = "降雪強度:";
+  } else {
+    container.style.display = "none";
+    document.getElementById("precipIntensity").value = "";
+  }
+}
+
+function resetForm() {
+  ["temp", "humidity", "wind", "gust"].forEach((id) => {
+    document.getElementById(id).value = "";
+  });
+  ["sunlight", "cloud", "precip", "precipIntensity"].forEach((id) => {
+    document.getElementById(id).value = "";
+  });
+  togglePrecipitation();
+  document.getElementById("result").textContent = "";
+  document.getElementById("formulaBadge").textContent = "";
+  document.getElementById("envNotes").textContent = "";
+}
+
+function calculate() {
+  const missing = [];
+  let T = parseFloat(document.getElementById("temp").value);
+  const tempUnit = document.getElementById("tempUnit").value;
+  const H = parseFloat(document.getElementById("humidity").value);
+  let V = parseFloat(document.getElementById("wind").value);
+  let G = parseFloat(document.getElementById("gust").value);
+  const sunlight = document.getElementById("sunlight").value;
+  const cloud = document.getElementById("cloud").value;
+  const precip = document.getElementById("precip").value;
+  const P = document.getElementById("precipIntensity").value;
+  const windUnit = document.getElementById("windUnit").value;
+  const gustUnit = document.getElementById("gustUnit").value;
+
+  const resultEl = document.getElementById("result");
+  const badgeEl = document.getElementById("formulaBadge");
+  const notesEl = document.getElementById("envNotes");
+
+  resultEl.textContent = "";
+  badgeEl.textContent = "";
+  notesEl.textContent = "";
+
+  if (isNaN(T)) missing.push("氣溫");
+  if (isNaN(H)) missing.push("濕度");
+  if (isNaN(V)) missing.push("風速");
+  if (precip === "") missing.push("降水");
+  if ((precip === "rain" || precip === "snow") && P === "") {
+    missing.push(precip === "rain" ? "降雨強度" : "降雪強度");
+  }
+  if (sunlight === "") missing.push("日照時段");
+  if (cloud === "") missing.push("雲量");
+
+  if (missing.length > 0) {
+    resultEl.textContent = "缺少：" + missing.join("、");
     return;
   }
 
-  if(tempUnit==="F") T=(T-32)*5/9;
-  V=windToMs(V, windUnit);
-  let useGust=!isNaN(G)&&G>0;
-  if(useGust) G=windToMs(G, gustUnit);
-  let V_eff=useGust?(V+G)/2:V;
-
-  // 單一公式計算 T_app
-  const w_cold=(T<=15?1:(T>=27?0:(27-T)/12));
-  let T_app=w_cold*(T-0.7*V_eff-0.12*(H/100)*(T-10)) + (1-w_cold)*(T + 0.33*(H/100)*T);
-
-  // 日照雲量修正 (簡化)
-  let sunCloudAdj=0;
-  if(T<=15){ // 低溫
-    sunCloudAdj = (sunlight==="night"? (cloud==="clear"?-0.3:cloud==="cloudy"?-0.1:0.1)
-                    :sunlight==="morning"? (cloud==="clear"?-0.4:cloud==="cloudy"?-0.2:0)
-                    :sunlight==="evening"? (cloud==="clear"?-0.1:cloud==="cloudy"?-0.05:-0.1)
-                    :sunlight==="day"? (cloud==="clear"?0.5:cloud==="cloudy"?0.1:0)
-                    :0);
-  } else if(T<27){ // 過渡
-    sunCloudAdj = (sunlight==="night"? (cloud==="overcast"?-0.1:0)
-                    :sunlight==="morning"? (cloud==="clear"?-0.3:cloud==="cloudy"?-0.2:-0.05)
-                    :sunlight==="evening"? (cloud==="clear"?0.2:cloud==="cloudy"?0.1:0.05)
-                    :sunlight==="day"? (cloud==="clear"?1.2:cloud==="cloudy"?0.7:0.3)
-                    :0);
-  } else { // 高溫
-    sunCloudAdj = (sunlight==="night"? (cloud==="clear"?0.1:cloud==="cloudy"?0: -0.05)
-                    :sunlight==="morning"? (cloud==="clear"?-0.1:cloud==="cloudy"?-0.05:0)
-                    :sunlight==="evening"? (cloud==="clear"?0.5:cloud==="cloudy"?0.3:0.1)
-                    :sunlight==="day"? (cloud==="clear"?1.5:cloud==="cloudy"?1:0.5)
-                    :0);
+  if (H < 0 || H > 100) {
+    resultEl.textContent = "濕度請輸入 0~100 範圍內的數值";
+    return;
   }
-  T_app += sunCloudAdj;
-
-  // 降水修正
-  const rainL={"lightest":-0.6,"light":-0.6,"moderate":-1.4,"heavy":-2.3,"extreme":-3.2};
-  const rainM={"lightest":-0.3,"light":-0.3,"moderate":-0.7,"heavy":-1.5,"extreme":-2.0};
-  const rainH={"lightest":-0.1,"light":-0.1,"moderate":-0.3,"heavy":-0.7,"extreme":-1.0};
-  const snowF={"lightest":-1.2,"light":-1.2,"moderate":-2.2,"heavy":-3.3,"extreme":-4.2};
-  let F_precip=0;
-  if(precip==="rain") F_precip=(T<=15?rainL:T<27?rainM:rainH)[P]||0;
-  else if(precip==="snow"){
-    if(T>=10){ document.getElementById("result").textContent="溫度過高 (" + T.toFixed(1) + "°C)，無法形成降雪條件"; return; }
-    F_precip=snowF[P]||0;
+  if (V < 0) {
+    resultEl.textContent = "風速不可為負數";
+    return;
+  }
+  if (!isNaN(G) && G < 0) {
+    resultEl.textContent = "陣風不可為負數";
+    return;
   }
 
-  let T_final=T_app+F_precip;
-  T_final=Math.round(T_final*100)/100;
-  document.getElementById("result").textContent=`體感溫度：約 ${T_final} °C`;
+  if (tempUnit === "F") T = fToC(T);
+  const vMs = windToMs(V, windUnit);
+  const vKmh = vMs * 3.6;
+  const hasGust = !isNaN(G) && G > 0;
+  const gMs = hasGust ? windToMs(G, gustUnit) : 0;
+
+  if (precip === "snow" && T >= 10) {
+    resultEl.textContent = "溫度過高 (" + T.toFixed(1) + "°C，已達 10°C 防呆上限)，無法形成降雪條件";
+    return;
+  }
+
+  const T_F = cToF(T);
+  let appC;
+  let formulaName;
+
+  if (T <= 10 && vKmh > 4.8) {
+    appC = windChillC(T, vKmh);
+    formulaName = "採用公式：NWS 風寒指數 (Wind Chill)";
+  } else if (T_F >= 80) {
+    const hiF = heatIndexF(T_F, H);
+    appC = fToC(hiF);
+    formulaName = "採用公式：Rothfusz 熱指數 (Heat Index)";
+  } else {
+    appC = steadmanAT_C(T, H, vMs);
+    formulaName = "採用公式：Steadman 表觀溫度 (Apparent Temperature)";
+  }
+
+  const T_final = Math.round(appC * 100) / 100;
+  const T_final_F = Math.round(cToF(T_final) * 100) / 100;
+
+  resultEl.innerHTML = `體感溫度：約 ${T_final} °C<br><span style="font-size:15px;color:#9be79b;">(${T_final_F} °F)</span>`;
+  badgeEl.textContent = formulaName;
+
+  const notes = [];
+  if (hasGust && gMs > vMs) {
+    notes.push(`陣風達 ${gMs.toFixed(1)} m/s（高於平均風 ${vMs.toFixed(1)} m/s），瞬間風壓較強`);
+  }
+  if (precip === "rain") {
+    notes.push("目前有降雨，體感易因水分蒸發與衣物浸濕而偏涼");
+  } else if (precip === "snow") {
+    notes.push("目前有降雪條件，請留意低溫與路面結冰風險");
+  }
+  if (sunlight === "day" && cloud === "clear") {
+    notes.push("白天晴空日照充足，戶外直射輻射會使實際體感高於陰影下數值");
+  } else if (sunlight === "night" && cloud === "clear") {
+    notes.push("夜間晴空輻射冷卻較明顯，清晨與深夜易偏涼");
+  }
+  notesEl.textContent = notes.join("；");
 }
 </script>
 
