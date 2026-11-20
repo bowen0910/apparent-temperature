@@ -28,7 +28,7 @@
 </style>
 </head>
 <body>
-<div id="version">v2.0.2</div>
+<div id="version">v2.0.3</div>
 
 <h1>體感溫度計算機</h1>
 
@@ -173,7 +173,8 @@ function windChillC(T_c, V_kmh) {
 }
 
 function steadmanAT_C(T_c, RH, v_ms) {
-  const es = 6.105 * Math.exp((17.27 * T_c) / (237.7 + T_c));
+  const safeT = Math.max(-60, T_c);
+  const es = 6.105 * Math.exp((17.27 * safeT) / (237.7 + safeT));
   const e = (RH / 100) * es;
   return T_c + 0.33 * e - 0.70 * v_ms - 4.00;
 }
@@ -280,6 +281,14 @@ function calculate() {
     resultEl.textContent = "陣風不可為負數";
     return;
   }
+  if (windUnit === "beaufort" && V > 17) {
+    resultEl.textContent = "蒲式風級通常為 0~17 級，請確認輸入數值";
+    return;
+  }
+  if (!isNaN(G) && gustUnit === "beaufort" && G > 17) {
+    resultEl.textContent = "陣風蒲式風級通常為 0~17 級，請確認輸入數值";
+    return;
+  }
 
   if (tempUnit === "F") T = fToC(T);
   const vMs = windToMs(V, windUnit);
@@ -306,8 +315,16 @@ function calculate() {
     formulaName = "採用公式：NWS 風寒指數 (Wind Chill)";
   } else if (T_F >= 80) {
     const hiF = heatIndexF(T_F, H);
-    appC = fToC(hiF);
-    formulaName = "採用公式：Rothfusz 熱指數 (Heat Index)";
+    const rawHiC = fToC(hiF);
+    const stC = steadmanAT_C(T, H, vMs);
+    if (hiF < 80) {
+      const blend = Math.max(0, Math.min(1, (T_F - 80) / 3));
+      appC = stC * (1 - blend) + rawHiC * blend;
+      formulaName = "採用公式：Heat Index / Steadman 過渡銜接";
+    } else {
+      appC = rawHiC;
+      formulaName = "採用公式：Rothfusz 熱指數 (Heat Index)";
+    }
   } else {
     appC = steadmanAT_C(T, H, vMs);
     formulaName = "採用公式：Steadman 表觀溫度 (Apparent Temperature)";
