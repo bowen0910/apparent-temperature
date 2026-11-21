@@ -34,7 +34,7 @@
 </style>
 </head>
 <body>
-<div id="version">v2.1.1</div>
+<div id="version">v2.1.2</div>
 
 <h1>體感溫度計算機</h1>
 
@@ -111,7 +111,7 @@
 
 <div class="field-hint">
   日照：清晨為日出前1小時～日出後1.5小時；傍晚為日落前0.5小時～日落後1小時（白天／夜間為其餘時段）。<br>
-  雲量：晴空=少雲（約0～2成）；多雲=部分雲量（約3～7 成）；陰天=雲層厚／遮蔽（約8～10成）。<br>
+  雲量：晴空=少雲（約0～2成）；多雲=部分雲量（約3～7成）；陰天=雲層厚／遮蔽（約8～10成）。<br>
   降水：參考時雨量 毛毛/小 &lt;1、小 1～3、中 3～15、大 15～40、豪 ≥40 mm/hr（降雪防呆上限 &lt; 10°C）。
 </div>
 
@@ -152,6 +152,34 @@
 <p class="note">設計者：夜ゞ無尾熊</p>
 
 <script>
+let skipUnloadPrompt = false;
+
+function hasUserData() {
+  const numIds = ["temp", "humidity", "wind", "gust"];
+  const hasNum = numIds.some((id) => document.getElementById(id).value.trim() !== "");
+
+  const selIds = ["sunlight", "cloud", "precip", "precipIntensity"];
+  const hasSel = selIds.some((id) => document.getElementById(id).value !== "");
+
+  const hasOutput =
+    document.getElementById("result").textContent.trim() !== "" ||
+    document.getElementById("formulaBadge").textContent.trim() !== "" ||
+    document.getElementById("envNotes").textContent.trim() !== "";
+
+  return hasNum || hasSel || hasOutput;
+}
+
+window.addEventListener("beforeunload", (e) => {
+  if (skipUnloadPrompt) {
+    skipUnloadPrompt = false;
+    return;
+  }
+  if (hasUserData()) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+
 function beaufortToMs(B) {
   return B <= 0 ? 0 : 0.836 * Math.pow(B, 1.5);
 }
@@ -293,9 +321,11 @@ function resetForm() {
   document.getElementById("result").textContent = "";
   document.getElementById("formulaBadge").textContent = "";
   document.getElementById("envNotes").textContent = "";
+  skipUnloadPrompt = true;
 }
 
 function calculate() {
+  skipUnloadPrompt = false;
   const missing = [];
   let T = parseFloat(document.getElementById("temp").value);
   const tempUnit = document.getElementById("tempUnit").value;
