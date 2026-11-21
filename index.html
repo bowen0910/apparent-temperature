@@ -16,7 +16,8 @@
   .three-col .col { flex:1; min-width:0; }
   .three-col label { margin-top:0; font-size:13px; white-space:nowrap; }
   .three-col select { width:100%; margin-top:3px; padding:5px 4px; border-radius:4px; border:none; font-size:13px; }
-  .btn-group { display:flex; gap:8px; margin-top:10px; }
+  .field-hint { margin-top:5px; font-size:11px; color:#9e9e9e; line-height:1.35; }
+  .btn-group { display:flex; gap:8px; margin-top:9px; }
   button { background-color:#444; color:#fff; padding:8px; flex:1; font-size:16px; border:none; border-radius:4px; cursor:pointer; }
   button:hover { background-color:#666; }
   button.reset-btn { background-color:#262626; flex:0.36; font-size:15px; }
@@ -108,16 +109,22 @@
   </div>
 </div>
 
+<div class="field-hint">
+  日照：清晨＝日出前 1H～日出後 1.5H；傍晚＝日落前 0.5H～日落後 1H（白天／夜間為其餘時段）。<br>
+  雲量：晴空＝少雲（約 0～2 成）；多雲＝部分雲量（約 3～7 成）；陰天＝雲層厚／遮蔽（約 8～10 成）。<br>
+  降水：參考時雨量 毛毛/小 &lt;1、小 1～3、中 3～15、大 15～40、豪 ≥40 mm/hr（降雪防呆上限 &lt; 10°C）。
+</div>
+
 <div id="precipitationContainer">
   <label id="precipLabel" for="precipIntensity">降雨強度:</label>
   <div class="input-row">
     <select id="precipIntensity" style="flex:1;">
       <option value="">請選擇強度</option>
-      <option value="lightest">毛毛/小</option>
-      <option value="light">小</option>
-      <option value="moderate">中</option>
-      <option value="heavy">大</option>
-      <option value="extreme">豪</option>
+      <option value="lightest">毛毛/小（參考時雨量 &lt; 1 mm/hr）</option>
+      <option value="light">小（參考時雨量 1～3 mm/hr）</option>
+      <option value="moderate">中（參考時雨量 3～15 mm/hr）</option>
+      <option value="heavy">大（參考時雨量 15～40 mm/hr）</option>
+      <option value="extreme">豪（參考時雨量 ≥ 40 mm/hr）</option>
     </select>
   </div>
 </div>
