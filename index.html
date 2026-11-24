@@ -33,15 +33,15 @@
   button:hover { background-color:#666; }
   button.reset-btn { background-color:#262626; flex:0.36; font-size:14.5px; }
   button.reset-btn:hover { background-color:#3a3a3a; }
-  #result { margin-top:8px; font-size:18px; color:#00FF00; text-align:center; line-height:1.25; }
-  #cyclingResult { margin-top:4px; font-size:18px; color:#FFB74D; text-align:center; line-height:1.25; display:none; }
-  .temp-f-inline { display:inline-block; font-size:13.5px; vertical-align:middle; margin-left:4px; }
+  #result { margin-top:14px; font-size:18px; color:#00FF00; display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:5px; line-height:1.3; }
+  #cyclingResult { margin-top:8px; font-size:18px; color:#FFB74D; display:none; justify-content:center; align-items:center; flex-wrap:wrap; gap:5px; line-height:1.3; }
+  .temp-f-inline { font-size:13.5px; line-height:1; }
   .temp-f-main { color:#9be79b; }
   .temp-f-cyc { color:#ffe082; }
-  #formulaBadge { margin-top:3px; font-size:11.5px; color:#FFD700; text-align:center; line-height:1.25; }
-  #envNotes { margin-top:3px; font-size:11.5px; color:#ccc; text-align:center; line-height:1.28; }
-  .note { margin-top:4px; font-size:10.5px; color:#888; text-align:center; line-height:1.25; }
-  details { margin-top:6px; font-size:10.5px; color:#aaa; line-height:1.32; }
+  #formulaBadge { margin-top:9px; font-size:11.5px; color:#FFD700; text-align:center; line-height:1.3; }
+  #envNotes { margin-top:5px; font-size:11.5px; color:#ccc; text-align:center; line-height:1.3; }
+  .note { margin-top:5px; font-size:10.5px; color:#888; text-align:center; line-height:1.25; }
+  details { margin-top:8px; font-size:10.5px; color:#aaa; line-height:1.32; }
   summary { cursor:pointer; font-weight:bold; }
   #precipitationContainer { display:none; }
   #version { position:absolute; top:6px; right:10px; font-size:12px; color:#888; }
@@ -636,7 +636,7 @@ function calculate() {
   const T_final_F = Math.round(cToF(T_final) * 100) / 100;
   const deltaSign = totalDelta >= 0 ? "+" : "";
 
-  resultEl.innerHTML = `體感溫度：約 ${T_final} °C <span class="temp-f-inline temp-f-main">(${T_final_F} °F)</span>`;
+  resultEl.innerHTML = `<span>體感溫度：約 ${T_final} °C</span><span class="temp-f-inline temp-f-main">(${T_final_F} °F)</span>`;
   badgeEl.textContent = `${formulaName}（環境修正 ${deltaSign}${totalDelta.toFixed(2)} °C）`;
 
   const notes = [];
@@ -662,8 +662,8 @@ function calculate() {
     const lowF = (Math.round(cToF(cyc.lowC) * 10) / 10).toFixed(1);
     const highF = (Math.round(cToF(cyc.highC) * 10) / 10).toFixed(1);
 
-    cyclingResultEl.style.display = "block";
-    cyclingResultEl.innerHTML = `騎行體感：約 ${cyc.lowC.toFixed(1)} °C ~ ${cyc.highC.toFixed(1)} °C <span class="temp-f-inline temp-f-cyc">(${lowF} °F ~ ${highF} °F)</span>`;
+    cyclingResultEl.style.display = "flex";
+    cyclingResultEl.innerHTML = `<span>騎行體感：約 ${cyc.lowC.toFixed(1)} °C ~ ${cyc.highC.toFixed(1)} °C</span><span class="temp-f-inline temp-f-cyc">(${lowF} °F ~ ${highF} °F)</span>`;
 
     const cycDetail = [`騎行（${cyc.dirLabel}）產熱 +${cyc.metabolicWarmth.toFixed(1)}°C`];
     if (cyc.wetExtraLow < 0) {
