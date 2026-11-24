@@ -12,6 +12,14 @@
   .input-row input { flex:1; padding:5px 7px; border-radius:4px; border:none; font-size:14px; min-width:0; }
   .input-row select { padding:5px 6px; border-radius:4px; border:none; font-size:14px; }
   .unit-select { width:36%; }
+  .cycling-box { margin-top:7px; padding:6px 8px; border-radius:4px; background:#111; border:1px solid #2b2b2b; }
+  .cycling-toggle { display:flex; align-items:center; gap:6px; margin-top:0; font-size:13px; color:#eee; cursor:pointer; }
+  .cycling-toggle input[type="checkbox"] { width:15px; height:15px; margin:0; cursor:pointer; }
+  #cyclingFields { display:none; margin-top:6px; }
+  #cyclingFields.active { display:flex; gap:6px; align-items:center; }
+  #cyclingFields input { flex:1.1; padding:5px 7px; border-radius:4px; border:none; font-size:13px; min-width:0; }
+  #cyclingFields select.speed-unit { width:26%; padding:5px 4px; border-radius:4px; border:none; font-size:13px; }
+  #cyclingFields select.wind-dir { width:34%; padding:5px 4px; border-radius:4px; border:none; font-size:13px; }
   .three-col { display:flex; gap:6px; margin-top:7px; }
   .three-col .col { flex:1; min-width:0; }
   .three-col label { margin-top:0; font-size:13px; white-space:nowrap; }
@@ -23,6 +31,7 @@
   button.reset-btn { background-color:#262626; flex:0.36; font-size:15px; }
   button.reset-btn:hover { background-color:#3a3a3a; }
   #result { margin-top:10px; font-size:20px; color:#00FF00; text-align:center; line-height:1.3; }
+  #cyclingResult { margin-top:6px; font-size:15px; color:#FFB74D; text-align:center; line-height:1.35; display:none; }
   #formulaBadge { margin-top:4px; font-size:12px; color:#FFD700; text-align:center; }
   #envNotes { margin-top:5px; font-size:12px; color:#ccc; text-align:center; line-height:1.35; }
   .note { margin-top:5px; font-size:11px; color:#888; text-align:center; line-height:1.3; }
@@ -34,7 +43,7 @@
 </style>
 </head>
 <body>
-<div id="version">v2.1.2</div>
+<div id="version">v2.2.0</div>
 
 <h1>體感溫度計算機</h1>
 
@@ -74,6 +83,28 @@
     <option value="beaufort">beaufort (蒲式風級)</option>
     <option value="kt">kt (節)</option>
   </select>
+</div>
+
+<div class="cycling-box">
+  <label class="cycling-toggle" for="enableCycling">
+    <input type="checkbox" id="enableCycling" onchange="toggleCycling()">
+    <span>同時估算騎行體感（下限 ~ 上限範圍）</span>
+  </label>
+  <div id="cyclingFields">
+    <input type="number" id="bikeSpeed" step="any" placeholder="騎行速度" min="0" aria-label="騎行速度">
+    <select id="bikeSpeedUnit" class="speed-unit" aria-label="騎行速度單位">
+      <option value="kmh" selected>km/h</option>
+      <option value="ms">m/s</option>
+      <option value="mph">mph</option>
+      <option value="kt">kt</option>
+    </select>
+    <select id="windDir" class="wind-dir" aria-label="風向(選填)">
+      <option value="" selected>風向(選填)</option>
+      <option value="head">逆風</option>
+      <option value="cross">側風</option>
+      <option value="tail">順風</option>
+    </select>
+  </div>
 </div>
 
 <hr>
@@ -135,6 +166,7 @@
 </div>
 
 <div id="result"></div>
+<div id="cyclingResult"></div>
 <div id="formulaBadge"></div>
 <div id="envNotes"></div>
 
@@ -144,7 +176,8 @@
 1. <strong>基準公式</strong>：低溫有風採 NWS 風寒指數 (T &lt;= 10°C 且風速 &gt; 4.8 km/h)；高溫採 Rothfusz 熱指數 (T_F &gt;= 80°F，低端平滑銜接)；其餘採 Steadman 表觀溫度。<br>
 2. <strong>日照 × 雲量修正</strong>：白天晴空 +1.8°C（氣溫 &gt;= 35°C 時乘 0.6 抑制過度疊加）、多雲 +0.7°C、陰天 0°C；清晨/傍晚晴空 +0.4°C、陰天 -0.2°C；夜間晴空 -0.8°C、多雲 -0.3°C。<br>
 3. <strong>降水強度修正</strong>：下雨依強度 -0.4 ~ -2.2°C（濕度 &gt; 85% 時蒸發冷卻乘 0.75）；下雪依強度 -0.7 ~ -2.5°C（氣溫達 10°C 防呆上限無法降雪）。<br>
-4. <strong>陣風修正</strong>：陣風高於平均風時，依風速差給予溫和瞬間氣流修正（上限 -1.0°C）。
+4. <strong>陣風修正</strong>：陣風高於平均風時，依風速差給予溫和瞬間氣流修正（上限 -1.0°C）。<br>
+5. <strong>騎行模式（下限 ~ 上限）</strong>：結合環境風速與騎行車速估算相對風速區間；下限納入迎風／逆風對流與雨天打濕衣物濕冷降溫，上限納入順風減緩風寒與穩態踩踏產熱補償。
 </p>
 </details>
 
@@ -155,18 +188,21 @@
 let skipUnloadPrompt = false;
 
 function hasUserData() {
-  const numIds = ["temp", "humidity", "wind", "gust"];
+  const numIds = ["temp", "humidity", "wind", "gust", "bikeSpeed"];
   const hasNum = numIds.some((id) => document.getElementById(id).value.trim() !== "");
 
-  const selIds = ["sunlight", "cloud", "precip", "precipIntensity"];
+  const selIds = ["sunlight", "cloud", "precip", "precipIntensity", "windDir"];
   const hasSel = selIds.some((id) => document.getElementById(id).value !== "");
+
+  const hasCyclingChecked = document.getElementById("enableCycling").checked;
 
   const hasOutput =
     document.getElementById("result").textContent.trim() !== "" ||
+    document.getElementById("cyclingResult").textContent.trim() !== "" ||
     document.getElementById("formulaBadge").textContent.trim() !== "" ||
     document.getElementById("envNotes").textContent.trim() !== "";
 
-  return hasNum || hasSel || hasOutput;
+  return hasNum || hasSel || hasCyclingChecked || hasOutput;
 }
 
 window.addEventListener("beforeunload", (e) => {
@@ -239,6 +275,43 @@ function heatIndexF(T_F, RH) {
   return hi;
 }
 
+function calcBaseApparentC(T, H, vMs) {
+  const vKmh = vMs * 3.6;
+  const T_F = cToF(T);
+
+  if (T <= 10 && vKmh > 4.8) {
+    return windChillC(T, vKmh);
+  }
+  if (T_F >= 80) {
+    const rawHiF = -42.379
+      + 2.04901523 * T_F
+      + 10.14333127 * H
+      - 0.22475541 * T_F * H
+      - 0.00683783 * T_F * T_F
+      - 0.05481717 * H * H
+      + 0.00122874 * T_F * T_F * H
+      + 0.00085282 * T_F * H * H
+      - 0.00000199 * T_F * T_F * H * H;
+
+    let adjHiF = rawHiF;
+    if (H < 13 && T_F >= 80 && T_F <= 112) {
+      adjHiF -= ((13 - H) / 4) * Math.sqrt((17 - Math.abs(T_F - 95)) / 17);
+    } else if (H > 85 && T_F >= 80 && T_F <= 87) {
+      adjHiF += ((H - 85) / 10) * ((87 - T_F) / 5);
+    }
+
+    const stC = steadmanAT_C(T, H, vMs);
+    const hiC = fToC(adjHiF);
+
+    if (T_F < 83 && adjHiF < 80) {
+      const blend = Math.max(0, Math.min(1, (T_F - 80) / 3));
+      return stC * (1 - blend) + hiC * blend;
+    }
+    return hiC;
+  }
+  return steadmanAT_C(T, H, vMs);
+}
+
 function getRadiationDelta(sunlight, cloud, tempC) {
   const table = {
     day: { clear: 1.8, cloudy: 0.7, overcast: 0.0 },
@@ -294,6 +367,92 @@ function getIntensityLabel(code) {
   return labels[code] || "";
 }
 
+function getWetChillFactor(intensity) {
+  const scaleMap = {
+    lightest: 0.75,
+    light: 1.0,
+    moderate: 1.15,
+    heavy: 1.3,
+    extreme: 1.45
+  };
+  return scaleMap[intensity] || 1.0;
+}
+
+function calcCyclingRange(T, H, vMs, gMs, sunlight, cloud, precip, P, radDelta, precipDelta, bikeMs, windDir) {
+  const effectiveGustMs = Math.max(vMs, gMs);
+  const gustExtraMs = Math.max(0, effectiveGustMs - vMs);
+
+  let lowEffWindMs;
+  let highEffWindMs;
+  let dirLabel;
+
+  if (windDir === "head") {
+    lowEffWindMs = bikeMs + effectiveGustMs;
+    highEffWindMs = bikeMs + vMs * 0.7;
+    dirLabel = "逆風";
+  } else if (windDir === "tail") {
+    const offsetHigh = Math.max(0, bikeMs - effectiveGustMs);
+    const offsetLow = Math.max(0, Math.abs(bikeMs - vMs) + gustExtraMs * 0.35);
+    lowEffWindMs = Math.max(offsetHigh, offsetLow);
+    highEffWindMs = Math.min(offsetHigh, offsetLow);
+    dirLabel = "順風";
+  } else if (windDir === "cross") {
+    lowEffWindMs = Math.sqrt(bikeMs * bikeMs + effectiveGustMs * effectiveGustMs);
+    highEffWindMs = Math.sqrt(bikeMs * bikeMs + vMs * vMs);
+    dirLabel = "側風";
+  } else {
+    lowEffWindMs = bikeMs + effectiveGustMs;
+    highEffWindMs = Math.max(0, Math.abs(bikeMs - vMs));
+    dirLabel = "未選風向";
+  }
+
+  let lowC = calcBaseApparentC(T, H, lowEffWindMs) + radDelta + precipDelta;
+  let highC = calcBaseApparentC(T, H, highEffWindMs) + radDelta + precipDelta;
+
+  let wetExtraLow = 0;
+  if (precip === "rain") {
+    const scale = getWetChillFactor(P);
+    wetExtraLow = -1.75 * scale;
+    lowC += wetExtraLow;
+    highC -= 0.45 * scale;
+  } else if (precip === "snow") {
+    wetExtraLow = -1.2;
+    lowC += wetExtraLow;
+    highC -= 0.3;
+  }
+
+  const bikeKmh = bikeMs * 3.6;
+  const metabolicWarmth = Math.min(1.5, Math.max(0.35, bikeKmh * 0.045));
+  lowC += metabolicWarmth * 0.45;
+  highC += metabolicWarmth;
+
+  if (lowC > highC) {
+    const tmp = lowC;
+    lowC = highC;
+    highC = tmp;
+  }
+
+  return {
+    lowC: Math.round(lowC * 10) / 10,
+    highC: Math.round(highC * 10) / 10,
+    dirLabel,
+    wetExtraLow,
+    metabolicWarmth
+  };
+}
+
+function toggleCycling() {
+  const checked = document.getElementById("enableCycling").checked;
+  const fieldsEl = document.getElementById("cyclingFields");
+  if (checked) {
+    fieldsEl.classList.add("active");
+  } else {
+    fieldsEl.classList.remove("active");
+    document.getElementById("cyclingResult").style.display = "none";
+    document.getElementById("cyclingResult").textContent = "";
+  }
+}
+
 function togglePrecipitation() {
   const precip = document.getElementById("precip").value;
   const container = document.getElementById("precipitationContainer");
@@ -311,14 +470,19 @@ function togglePrecipitation() {
 }
 
 function resetForm() {
-  ["temp", "humidity", "wind", "gust"].forEach((id) => {
+  ["temp", "humidity", "wind", "gust", "bikeSpeed"].forEach((id) => {
     document.getElementById(id).value = "";
   });
-  ["sunlight", "cloud", "precip", "precipIntensity"].forEach((id) => {
+  ["sunlight", "cloud", "precip", "precipIntensity", "windDir"].forEach((id) => {
     document.getElementById(id).value = "";
   });
+  document.getElementById("bikeSpeedUnit").value = "kmh";
+  document.getElementById("enableCycling").checked = false;
+  document.getElementById("cyclingFields").classList.remove("active");
   togglePrecipitation();
   document.getElementById("result").textContent = "";
+  document.getElementById("cyclingResult").style.display = "none";
+  document.getElementById("cyclingResult").textContent = "";
   document.getElementById("formulaBadge").textContent = "";
   document.getElementById("envNotes").textContent = "";
   skipUnloadPrompt = true;
@@ -339,17 +503,26 @@ function calculate() {
   const windUnit = document.getElementById("windUnit").value;
   const gustUnit = document.getElementById("gustUnit").value;
 
+  const cyclingEnabled = document.getElementById("enableCycling").checked;
+  const rawBikeSpeed = parseFloat(document.getElementById("bikeSpeed").value);
+  const bikeSpeedUnit = document.getElementById("bikeSpeedUnit").value;
+  const windDir = document.getElementById("windDir").value;
+
   const resultEl = document.getElementById("result");
+  const cyclingResultEl = document.getElementById("cyclingResult");
   const badgeEl = document.getElementById("formulaBadge");
   const notesEl = document.getElementById("envNotes");
 
   resultEl.textContent = "";
+  cyclingResultEl.style.display = "none";
+  cyclingResultEl.textContent = "";
   badgeEl.textContent = "";
   notesEl.textContent = "";
 
   if (isNaN(T)) missing.push("氣溫");
   if (isNaN(H)) missing.push("濕度");
   if (isNaN(V)) missing.push("風速");
+  if (cyclingEnabled && isNaN(rawBikeSpeed)) missing.push("騎行速度");
   if (precip === "") missing.push("降水");
   if ((precip === "rain" || precip === "snow") && P === "") {
     missing.push(precip === "rain" ? "降雨強度" : "降雪強度");
@@ -374,6 +547,10 @@ function calculate() {
     resultEl.textContent = "陣風不可為負數";
     return;
   }
+  if (cyclingEnabled && rawBikeSpeed < 0) {
+    resultEl.textContent = "騎行速度不可為負數";
+    return;
+  }
   if (windUnit === "beaufort" && V > 17) {
     resultEl.textContent = "蒲式風級通常為 0~17 級，請確認輸入數值";
     return;
@@ -389,7 +566,7 @@ function calculate() {
   const hasGust = !isNaN(G) && G > 0;
   const gMs = hasGust ? windToMs(G, gustUnit) : 0;
 
-  if (hasGust && gMs < vMs) {
+  if (!cyclingEnabled && hasGust && gMs < vMs) {
     resultEl.textContent = "陣風不可小於平均風速";
     return;
   }
@@ -407,15 +584,32 @@ function calculate() {
     baseC = windChillC(T, vKmh);
     formulaName = "基準：NWS 風寒指數 (Wind Chill)";
   } else if (T_F >= 80) {
-    const hiF = heatIndexF(T_F, H);
-    const rawHiC = fToC(hiF);
+    const rawHiF = -42.379
+      + 2.04901523 * T_F
+      + 10.14333127 * H
+      - 0.22475541 * T_F * H
+      - 0.00683783 * T_F * T_F
+      - 0.05481717 * H * H
+      + 0.00122874 * T_F * T_F * H
+      + 0.00085282 * T_F * H * H
+      - 0.00000199 * T_F * T_F * H * H;
+
+    let adjHiF = rawHiF;
+    if (H < 13 && T_F >= 80 && T_F <= 112) {
+      adjHiF -= ((13 - H) / 4) * Math.sqrt((17 - Math.abs(T_F - 95)) / 17);
+    } else if (H > 85 && T_F >= 80 && T_F <= 87) {
+      adjHiF += ((H - 85) / 10) * ((87 - T_F) / 5);
+    }
+
     const stC = steadmanAT_C(T, H, vMs);
-    if (hiF < 80) {
+    const hiC = fToC(adjHiF);
+
+    if (T_F < 83 && adjHiF < 80) {
       const blend = Math.max(0, Math.min(1, (T_F - 80) / 3));
-      baseC = stC * (1 - blend) + rawHiC * blend;
+      baseC = stC * (1 - blend) + hiC * blend;
       formulaName = "基準：Heat Index / Steadman 過渡銜接";
     } else {
-      baseC = rawHiC;
+      baseC = hiC;
       formulaName = "基準：Rothfusz 熱指數 (Heat Index)";
     }
   } else {
@@ -425,7 +619,7 @@ function calculate() {
 
   const radDelta = getRadiationDelta(sunlight, cloud, T);
   const precipDelta = getPrecipDelta(precip, P, H);
-  const gustDelta = (hasGust && gMs > vMs)
+  const gustDelta = (!cyclingEnabled && hasGust && gMs > vMs)
     ? -Math.min(1.0, (gMs - vMs) * 0.10)
     : 0;
 
@@ -444,7 +638,7 @@ function calculate() {
     const rSign = radDelta > 0 ? "+" : "";
     notes.push(`日照雲量修正 ${rSign}${radDelta.toFixed(2)} °C`);
   }
-  if (hasGust && gMs > vMs) {
+  if (!cyclingEnabled && hasGust && gMs > vMs) {
     notes.push(`陣風 ${gMs.toFixed(1)} m/s（高於平均風 ${vMs.toFixed(1)} m/s），修正 ${gustDelta.toFixed(2)} °C`);
   }
   if (precip === "rain") {
@@ -452,6 +646,26 @@ function calculate() {
   } else if (precip === "snow") {
     notes.push(`降雪（${getIntensityLabel(P)}）修正 ${precipDelta.toFixed(2)} °C`);
   }
+
+  if (cyclingEnabled) {
+    const bikeMs = windToMs(rawBikeSpeed, bikeSpeedUnit);
+    const cyc = calcCyclingRange(
+      T, H, vMs, gMs, sunlight, cloud, precip, P,
+      radDelta, precipDelta, bikeMs, windDir
+    );
+    const lowF = (Math.round(cToF(cyc.lowC) * 10) / 10).toFixed(1);
+    const highF = (Math.round(cToF(cyc.highC) * 10) / 10).toFixed(1);
+
+    cyclingResultEl.style.display = "block";
+    cyclingResultEl.innerHTML = `騎行體感範圍：約 ${cyc.lowC.toFixed(1)} °C ~ ${cyc.highC.toFixed(1)} °C<br><span style="font-size:12px;color:#ffe082;">(${lowF} °F ~ ${highF} °F)</span>`;
+
+    const cycDetail = [`騎行（${cyc.dirLabel}）產熱 +${cyc.metabolicWarmth.toFixed(1)}°C`];
+    if (cyc.wetExtraLow < 0) {
+      cycDetail.push(`迎風濕冷 ${cyc.wetExtraLow.toFixed(1)}°C`);
+    }
+    notes.push(cycDetail.join("、"));
+  }
+
   notesEl.textContent = notes.join("；");
 }
 </script>
