@@ -5,45 +5,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>體感溫度計算機</title>
 <style>
-  body { background-color:#000; color:#fff; font-family:Arial,sans-serif; padding:8px 10px; max-width:480px; margin:auto; position:relative; }
-  h1 { color:#FFD700; text-align:center; margin:4px 0 10px; font-size:22px; }
-  label { display:block; margin-top:7px; font-size:14px; }
-  .input-row { display:flex; gap:6px; align-items:center; margin-top:3px; }
-  .input-row input { flex:1; padding:5px 7px; border-radius:4px; border:none; font-size:14px; min-width:0; }
-  .input-row select { padding:5px 6px; border-radius:4px; border:none; font-size:14px; }
+  body { background-color:#000; color:#fff; font-family:Arial,sans-serif; padding:6px 10px; max-width:480px; margin:auto; position:relative; }
+  h1 { color:#FFD700; text-align:center; margin:2px 0 7px; font-size:21px; }
+  label { display:block; margin-top:5px; font-size:13.5px; }
+  .input-row { display:flex; gap:6px; align-items:center; margin-top:2px; }
+  .input-row input { flex:1; padding:4px 7px; border-radius:4px; border:none; font-size:14px; min-width:0; }
+  .input-row select { padding:4px 6px; border-radius:4px; border:none; font-size:13.5px; }
   .unit-select { width:36%; }
-  .cycling-box { margin-top:7px; padding:6px 8px; border-radius:4px; background:#111; border:1px solid #2b2b2b; }
+  .cycling-box { margin-top:6px; padding:5px 8px; border-radius:4px; background:#111; border:1px solid #2b2b2b; }
   .cycling-toggle { display:flex; align-items:center; gap:6px; margin-top:0; font-size:13px; color:#eee; cursor:pointer; }
-  .cycling-toggle input[type="checkbox"] { width:15px; height:15px; margin:0; cursor:pointer; }
-  #cyclingFields { display:none; margin-top:6px; }
+  .cycling-toggle input[type="checkbox"] { width:14px; height:14px; margin:0; cursor:pointer; }
+  #cyclingFields { display:none; margin-top:5px; }
   #cyclingFields.active { display:flex; gap:6px; align-items:center; }
-  #cyclingFields input { flex:1.1; padding:5px 7px; border-radius:4px; border:none; font-size:13px; min-width:0; }
-  #cyclingFields select.speed-unit { width:26%; padding:5px 4px; border-radius:4px; border:none; font-size:13px; }
-  #cyclingFields select.wind-dir { width:34%; padding:5px 4px; border-radius:4px; border:none; font-size:13px; }
-  .three-col { display:flex; gap:6px; margin-top:7px; }
+  #cyclingFields input { flex:1.1; padding:4px 7px; border-radius:4px; border:none; font-size:13px; min-width:0; }
+  #cyclingFields select.speed-unit { width:26%; padding:4px 4px; border-radius:4px; border:none; font-size:13px; }
+  #cyclingFields select.wind-dir { width:34%; padding:4px 4px; border-radius:4px; border:none; font-size:13px; }
+  .three-col { display:flex; gap:6px; margin-top:6px; }
   .three-col .col { flex:1; min-width:0; }
   .three-col label { margin-top:0; font-size:13px; white-space:nowrap; }
-  .three-col select { width:100%; margin-top:3px; padding:5px 4px; border-radius:4px; border:none; font-size:13px; }
-  .field-hint { margin-top:5px; font-size:11px; color:#9e9e9e; line-height:1.35; }
-  .btn-group { display:flex; gap:8px; margin-top:9px; }
-  button { background-color:#444; color:#fff; padding:8px; flex:1; font-size:16px; border:none; border-radius:4px; cursor:pointer; }
+  .three-col select { width:100%; margin-top:2px; padding:4px 4px; border-radius:4px; border:none; font-size:13px; }
+  .field-hint { margin-top:4px; font-size:10.5px; color:#9e9e9e; line-height:1.28; }
+  #precipitationContainer { margin-top:4px; }
+  #precipitationContainer label { margin-top:2px; font-size:13px; }
+  #precipitationContainer select { padding:4px 6px; font-size:13px; }
+  .btn-group { display:flex; gap:8px; margin-top:7px; }
+  button { background-color:#444; color:#fff; padding:7px; flex:1; font-size:15.5px; border:none; border-radius:4px; cursor:pointer; }
   button:hover { background-color:#666; }
-  button.reset-btn { background-color:#262626; flex:0.36; font-size:15px; }
+  button.reset-btn { background-color:#262626; flex:0.36; font-size:14.5px; }
   button.reset-btn:hover { background-color:#3a3a3a; }
-  #result { margin-top:10px; font-size:20px; color:#00FF00; text-align:center; line-height:1.3; }
-  #cyclingResult { margin-top:6px; font-size:15px; color:#FFB74D; text-align:center; line-height:1.35; display:none; }
-  #formulaBadge { margin-top:4px; font-size:12px; color:#FFD700; text-align:center; }
-  #envNotes { margin-top:5px; font-size:12px; color:#ccc; text-align:center; line-height:1.35; }
-  .note { margin-top:5px; font-size:11px; color:#888; text-align:center; line-height:1.3; }
-  details { margin-top:8px; font-size:11px; color:#aaa; line-height:1.4; }
+  #result { margin-top:8px; font-size:18px; color:#00FF00; text-align:center; line-height:1.25; }
+  #cyclingResult { margin-top:4px; font-size:18px; color:#FFB74D; text-align:center; line-height:1.25; display:none; }
+  .temp-f-inline { display:inline-block; font-size:13.5px; vertical-align:baseline; transform:translateY(2px); margin-left:4px; }
+  .temp-f-main { color:#9be79b; }
+  .temp-f-cyc { color:#ffe082; }
+  #formulaBadge { margin-top:3px; font-size:11.5px; color:#FFD700; text-align:center; line-height:1.25; }
+  #envNotes { margin-top:3px; font-size:11.5px; color:#ccc; text-align:center; line-height:1.28; }
+  .note { margin-top:4px; font-size:10.5px; color:#888; text-align:center; line-height:1.25; }
+  details { margin-top:6px; font-size:10.5px; color:#aaa; line-height:1.32; }
   summary { cursor:pointer; font-weight:bold; }
   #precipitationContainer { display:none; }
-  #version { position:absolute; top:8px; right:10px; font-size:12px; color:#888; }
-  hr { border:0; border-top:1px solid #333; margin:9px 0; }
+  #version { position:absolute; top:6px; right:10px; font-size:12px; color:#888; }
+  hr { border:0; border-top:1px solid #333; margin:7px 0; }
 </style>
 </head>
 <body>
-<div id="version">v2.2.0</div>
+<div id="version">v2.2.1</div>
 
 <h1>體感溫度計算機</h1>
 
@@ -358,7 +364,7 @@ function getPrecipDelta(precip, intensity, rh) {
 
 function getIntensityLabel(code) {
   const labels = {
-    lightest: "毛毛/小",
+    lightest: "毛毛",
     light: "小",
     moderate: "中",
     heavy: "大",
@@ -630,7 +636,7 @@ function calculate() {
   const T_final_F = Math.round(cToF(T_final) * 100) / 100;
   const deltaSign = totalDelta >= 0 ? "+" : "";
 
-  resultEl.innerHTML = `體感溫度：約 ${T_final} °C<br><span style="font-size:15px;color:#9be79b;">(${T_final_F} °F)</span>`;
+  resultEl.innerHTML = `體感溫度：約 ${T_final} °C <span class="temp-f-inline temp-f-main">(${T_final_F} °F)</span>`;
   badgeEl.textContent = `${formulaName}（環境修正 ${deltaSign}${totalDelta.toFixed(2)} °C）`;
 
   const notes = [];
@@ -657,7 +663,7 @@ function calculate() {
     const highF = (Math.round(cToF(cyc.highC) * 10) / 10).toFixed(1);
 
     cyclingResultEl.style.display = "block";
-    cyclingResultEl.innerHTML = `騎行體感範圍：約 ${cyc.lowC.toFixed(1)} °C ~ ${cyc.highC.toFixed(1)} °C<br><span style="font-size:12px;color:#ffe082;">(${lowF} °F ~ ${highF} °F)</span>`;
+    cyclingResultEl.innerHTML = `騎行體感範圍：約 ${cyc.lowC.toFixed(1)} °C ~ ${cyc.highC.toFixed(1)} °C <span class="temp-f-inline temp-f-cyc">(${lowF} °F ~ ${highF} °F)</span>`;
 
     const cycDetail = [`騎行（${cyc.dirLabel}）產熱 +${cyc.metabolicWarmth.toFixed(1)}°C`];
     if (cyc.wetExtraLow < 0) {
