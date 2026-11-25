@@ -7,49 +7,92 @@
 <style>
   body { background-color:#000; color:#fff; font-family:Arial,sans-serif; padding:6px 10px; max-width:480px; margin:auto; position:relative; }
   h1 { color:#FFD700; text-align:center; margin:2px 0 7px; font-size:21px; }
-  label { display:block; margin-top:5px; font-size:13.5px; }
+  label { display:block; margin-top:5px; font-size:13.5px; color:#e5e7eb; }
   .input-row { display:flex; gap:6px; align-items:center; margin-top:2px; }
-  .input-row input { flex:1; padding:4px 7px; border-radius:4px; border:none; font-size:14px; min-width:0; }
-  .input-row select { padding:4px 6px; border-radius:4px; border:none; font-size:13.5px; }
+  .input-row input { flex:1; padding:4px 7px; border-radius:4px; border:1px solid #262626; background:#141414; color:#fff; font-size:14px; min-width:0; }
+  .input-row select { padding:4px 6px; border-radius:4px; border:1px solid #262626; background:#1a1a1a; color:#fff; font-size:13.5px; }
   .unit-select { width:36%; }
-  .cycling-box { margin-top:6px; padding:5px 8px; border-radius:4px; background:#111; border:1px solid #2b2b2b; }
+  .cycling-box { margin-top:6px; padding:6px 8px; border-radius:6px; background:#111316; border:1px solid #252930; }
   .cycling-toggle { display:flex; align-items:center; gap:6px; margin-top:0; font-size:13px; color:#eee; cursor:pointer; }
   .cycling-toggle input[type="checkbox"] { width:14px; height:14px; margin:0; cursor:pointer; }
   #cyclingFields { display:none; margin-top:5px; }
   #cyclingFields.active { display:flex; gap:6px; align-items:center; }
-  #cyclingFields input { flex:1.1; padding:4px 7px; border-radius:4px; border:none; font-size:13px; min-width:0; }
-  #cyclingFields select.speed-unit { width:26%; padding:4px 4px; border-radius:4px; border:none; font-size:13px; }
-  #cyclingFields select.wind-dir { width:34%; padding:4px 4px; border-radius:4px; border:none; font-size:13px; }
+  #cyclingFields input { flex:1.1; padding:4px 7px; border-radius:4px; border:1px solid #2a2e37; background:#16191e; color:#fff; font-size:13px; min-width:0; }
+  #cyclingFields select.speed-unit { width:26%; padding:4px 4px; border-radius:4px; border:1px solid #2a2e37; background:#1c2026; color:#fff; font-size:13px; }
+  #cyclingFields select.wind-dir { width:34%; padding:4px 4px; border-radius:4px; border:1px solid #2a2e37; background:#1c2026; color:#fff; font-size:13px; }
   .three-col { display:flex; gap:6px; margin-top:6px; }
   .three-col .col { flex:1; min-width:0; }
   .three-col label { margin-top:0; font-size:13px; white-space:nowrap; }
-  .three-col select { width:100%; margin-top:2px; padding:4px 4px; border-radius:4px; border:none; font-size:13px; }
-  .field-hint { margin-top:4px; font-size:10.5px; color:#9e9e9e; line-height:1.28; }
+  .three-col select { width:100%; margin-top:2px; padding:4px 4px; border-radius:4px; border:1px solid #262626; background:#1a1a1a; color:#fff; font-size:13px; }
+  .field-hint { margin-top:4px; font-size:10.5px; color:#80858e; line-height:1.28; }
   #precipitationContainer { margin-top:4px; }
   #precipitationContainer label { margin-top:2px; font-size:13px; }
-  #precipitationContainer select { padding:4px 6px; font-size:13px; }
-  .btn-group { display:flex; gap:8px; margin-top:7px; }
-  button { background-color:#444; color:#fff; padding:7px; flex:1; font-size:15.5px; border:none; border-radius:4px; cursor:pointer; }
-  button:hover { background-color:#666; }
-  button.reset-btn { background-color:#262626; flex:0.36; font-size:14.5px; }
-  button.reset-btn:hover { background-color:#3a3a3a; }
-  #result { margin-top:14px; font-size:18px; color:#00FF00; display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:5px; line-height:1.3; }
-  #cyclingResult { margin-top:8px; font-size:18px; color:#FFB74D; display:none; justify-content:center; align-items:center; flex-wrap:wrap; gap:5px; line-height:1.3; }
-  .temp-f-inline { font-size:13.5px; line-height:1; }
-  .temp-f-main { color:#9be79b; }
+  #precipitationContainer select { padding:4px 6px; font-size:13px; border-radius:4px; border:1px solid #262626; background:#1a1a1a; color:#fff; }
+  .btn-group { display:flex; gap:8px; margin-top:8px; }
+  button { background-color:#059669; color:#fff; padding:7px; flex:1; font-size:15.5px; font-weight:bold; border:none; border-radius:6px; cursor:pointer; transition:background-color 0.2s ease; }
+  button:hover { background-color:#10b981; }
+  button.reset-btn { background-color:#1e2228; color:#d1d5db; font-weight:normal; border:1px solid #303640; flex:0.36; font-size:14.5px; }
+  button.reset-btn:hover { background-color:#2b3038; }
+
+  #resultCard {
+    display:none;
+    margin-top:11px;
+    padding:10px 12px;
+    border-radius:10px;
+    background:#111418;
+    border:1px solid #272c35;
+    transition:border-color 0.25s ease, background 0.25s ease;
+  }
+  #resultCard.visible { display:block; }
+  #resultCard.cold {
+    border-color:rgba(56, 189, 248, 0.42);
+    background:linear-gradient(180deg, rgba(56, 189, 248, 0.09) 0%, #111418 100%);
+  }
+  #resultCard.comfort {
+    border-color:rgba(52, 211, 153, 0.42);
+    background:linear-gradient(180deg, rgba(52, 211, 153, 0.09) 0%, #111418 100%);
+  }
+  #resultCard.warm {
+    border-color:rgba(251, 191, 36, 0.45);
+    background:linear-gradient(180deg, rgba(251, 191, 36, 0.09) 0%, #111418 100%);
+  }
+  #resultCard.hot {
+    border-color:rgba(248, 113, 113, 0.48);
+    background:linear-gradient(180deg, rgba(248, 113, 113, 0.11) 0%, #111418 100%);
+  }
+  #resultCard.notice {
+    border-color:rgba(250, 204, 21, 0.35);
+    background:#141310;
+  }
+
+  #result { font-size:20px; font-weight:bold; color:#34d399; display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:5px; line-height:1.3; }
+  #resultCard.cold #result { color:#38bdf8; }
+  #resultCard.comfort #result { color:#34d399; }
+  #resultCard.warm #result { color:#fbbf24; }
+  #resultCard.hot #result { color:#f87171; }
+  #resultCard.notice #result { font-size:15px; font-weight:normal; color:#facc15; }
+
+  #cyclingResult { margin-top:6px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.12); font-size:16.5px; font-weight:bold; color:#FFB74D; display:none; justify-content:center; align-items:center; flex-wrap:wrap; gap:5px; line-height:1.3; }
+  .temp-f-inline { font-size:13.5px; font-weight:normal; line-height:1; }
+  .temp-f-main { color:#a7f3d0; }
+  #resultCard.cold .temp-f-main { color:#bae6fd; }
+  #resultCard.comfort .temp-f-main { color:#a7f3d0; }
+  #resultCard.warm .temp-f-main { color:#fde68a; }
+  #resultCard.hot .temp-f-main { color:#fecaca; }
   .temp-f-cyc { color:#ffe082; }
-  #formulaBadge { margin-top:9px; font-size:11.5px; color:#FFD700; text-align:center; line-height:1.3; }
-  #envNotes { margin-top:5px; font-size:11.5px; color:#ccc; text-align:center; line-height:1.3; }
-  .note { margin-top:5px; font-size:10.5px; color:#888; text-align:center; line-height:1.25; }
-  details { margin-top:8px; font-size:10.5px; color:#aaa; line-height:1.32; }
-  summary { cursor:pointer; font-weight:bold; }
+
+  #formulaBadge { margin-top:7px; font-size:11.5px; color:#d1d5db; text-align:center; line-height:1.35; }
+  #envNotes { margin-top:4px; font-size:11.5px; color:#9ca3af; text-align:center; line-height:1.35; }
+  .note { margin-top:5px; font-size:10.5px; color:#737880; text-align:center; line-height:1.25; }
+  details { margin-top:8px; font-size:10.5px; color:#8b919a; line-height:1.32; }
+  summary { cursor:pointer; font-weight:bold; color:#a3a9b3; }
   #precipitationContainer { display:none; }
-  #version { position:absolute; top:6px; right:10px; font-size:12px; color:#888; }
-  hr { border:0; border-top:1px solid #333; margin:7px 0; }
+  #version { position:absolute; top:6px; right:10px; font-size:12px; color:#777; }
+  hr { border:0; border-top:1px solid #26292e; margin:7px 0; }
 </style>
 </head>
 <body>
-<div id="version">v2.2.1</div>
+<div id="version">v2.2.2</div>
 
 <h1>體感溫度計算機</h1>
 
@@ -171,10 +214,12 @@
   <button type="button" class="reset-btn" onclick="resetForm()">清除</button>
 </div>
 
-<div id="result"></div>
-<div id="cyclingResult"></div>
-<div id="formulaBadge"></div>
-<div id="envNotes"></div>
+<div id="resultCard">
+  <div id="result"></div>
+  <div id="cyclingResult"></div>
+  <div id="formulaBadge"></div>
+  <div id="envNotes"></div>
+</div>
 
 <details>
 <summary>氣象基準 ＋ 物理趨勢環境修正說明</summary>
@@ -447,6 +492,20 @@ function calcCyclingRange(T, H, vMs, gMs, sunlight, cloud, precip, P, radDelta, 
   };
 }
 
+function setResultCardState(mode) {
+  const cardEl = document.getElementById("resultCard");
+  cardEl.className = "";
+  if (!mode) return;
+  cardEl.classList.add("visible", mode);
+}
+
+function getTempToneClass(tempC) {
+  if (tempC < 16) return "cold";
+  if (tempC <= 26) return "comfort";
+  if (tempC <= 32) return "warm";
+  return "hot";
+}
+
 function toggleCycling() {
   const checked = document.getElementById("enableCycling").checked;
   const fieldsEl = document.getElementById("cyclingFields");
@@ -486,6 +545,7 @@ function resetForm() {
   document.getElementById("enableCycling").checked = false;
   document.getElementById("cyclingFields").classList.remove("active");
   togglePrecipitation();
+  setResultCardState("");
   document.getElementById("result").textContent = "";
   document.getElementById("cyclingResult").style.display = "none";
   document.getElementById("cyclingResult").textContent = "";
@@ -519,6 +579,7 @@ function calculate() {
   const badgeEl = document.getElementById("formulaBadge");
   const notesEl = document.getElementById("envNotes");
 
+  setResultCardState("");
   resultEl.textContent = "";
   cyclingResultEl.style.display = "none";
   cyclingResultEl.textContent = "";
@@ -537,31 +598,38 @@ function calculate() {
   if (cloud === "") missing.push("雲量");
 
   if (missing.length > 0) {
+    setResultCardState("notice");
     resultEl.textContent = "缺少：" + missing.join("、");
     return;
   }
 
   if (H < 0 || H > 100) {
+    setResultCardState("notice");
     resultEl.textContent = "濕度請輸入 0~100 範圍內的數值";
     return;
   }
   if (V < 0) {
+    setResultCardState("notice");
     resultEl.textContent = "風速不可為負數";
     return;
   }
   if (!isNaN(G) && G < 0) {
+    setResultCardState("notice");
     resultEl.textContent = "陣風不可為負數";
     return;
   }
   if (cyclingEnabled && rawBikeSpeed < 0) {
+    setResultCardState("notice");
     resultEl.textContent = "騎行速度不可為負數";
     return;
   }
   if (windUnit === "beaufort" && V > 17) {
+    setResultCardState("notice");
     resultEl.textContent = "蒲式風級通常為 0~17 級，請確認輸入數值";
     return;
   }
   if (!isNaN(G) && gustUnit === "beaufort" && G > 17) {
+    setResultCardState("notice");
     resultEl.textContent = "陣風蒲式風級通常為 0~17 級，請確認輸入數值";
     return;
   }
@@ -573,11 +641,13 @@ function calculate() {
   const gMs = hasGust ? windToMs(G, gustUnit) : 0;
 
   if (!cyclingEnabled && hasGust && gMs < vMs) {
+    setResultCardState("notice");
     resultEl.textContent = "陣風不可小於平均風速";
     return;
   }
 
   if (precip === "snow" && T >= 10) {
+    setResultCardState("notice");
     resultEl.textContent = "溫度過高 (" + T.toFixed(1) + "°C，已達 10°C 防呆上限)，無法形成降雪條件";
     return;
   }
@@ -636,6 +706,7 @@ function calculate() {
   const T_final_F = Math.round(cToF(T_final) * 100) / 100;
   const deltaSign = totalDelta >= 0 ? "+" : "";
 
+  setResultCardState(getTempToneClass(T_final));
   resultEl.innerHTML = `<span>體感溫度：約 ${T_final} °C</span><span class="temp-f-inline temp-f-main">(${T_final_F} °F)</span>`;
   badgeEl.textContent = `${formulaName}（環境修正 ${deltaSign}${totalDelta.toFixed(2)} °C）`;
 
