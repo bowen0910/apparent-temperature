@@ -72,14 +72,19 @@
   #resultCard.hot #result { color:#f87171; }
   #resultCard.notice #result { font-size:15px; font-weight:normal; color:#facc15; }
 
-  #cyclingResult { margin-top:6px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.12); font-size:16.5px; font-weight:bold; color:#FFB74D; display:none; justify-content:center; align-items:center; flex-wrap:wrap; gap:5px; line-height:1.3; }
+  #cyclingResult { margin-top:6px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.12); font-size:16.5px; font-weight:bold; color:#34d399; display:none; justify-content:center; align-items:center; flex-wrap:wrap; gap:5px; line-height:1.3; transition:color 0.2s ease; }
+  #cyclingResult.cold { color:#38bdf8; }
+  #cyclingResult.comfort { color:#34d399; }
+  #cyclingResult.warm { color:#fbbf24; }
+  #cyclingResult.hot { color:#f87171; }
+
   .temp-f-inline { font-size:13.5px; font-weight:normal; line-height:1; }
   .temp-f-main { color:#a7f3d0; }
-  #resultCard.cold .temp-f-main { color:#bae6fd; }
-  #resultCard.comfort .temp-f-main { color:#a7f3d0; }
-  #resultCard.warm .temp-f-main { color:#fde68a; }
-  #resultCard.hot .temp-f-main { color:#fecaca; }
-  .temp-f-cyc { color:#ffe082; }
+  #resultCard.cold .temp-f-main, #cyclingResult.cold .temp-f-cyc { color:#bae6fd; }
+  #resultCard.comfort .temp-f-main, #cyclingResult.comfort .temp-f-cyc { color:#a7f3d0; }
+  #resultCard.warm .temp-f-main, #cyclingResult.warm .temp-f-cyc { color:#fde68a; }
+  #resultCard.hot .temp-f-main, #cyclingResult.hot .temp-f-cyc { color:#fecaca; }
+  .temp-f-cyc { color:#a7f3d0; }
 
   #formulaBadge { margin-top:7px; font-size:11.5px; color:#d1d5db; text-align:center; line-height:1.35; }
   #envNotes { margin-top:4px; font-size:11.5px; color:#9ca3af; text-align:center; line-height:1.35; }
@@ -92,7 +97,7 @@
 </style>
 </head>
 <body>
-<div id="version">v2.2.2</div>
+<div id="version">v2.2.3</div>
 
 <h1>體感溫度計算機</h1>
 
@@ -506,6 +511,13 @@ function getTempToneClass(tempC) {
   return "hot";
 }
 
+function resetCyclingResult() {
+  const cyclingResultEl = document.getElementById("cyclingResult");
+  cyclingResultEl.className = "";
+  cyclingResultEl.style.display = "none";
+  cyclingResultEl.textContent = "";
+}
+
 function toggleCycling() {
   const checked = document.getElementById("enableCycling").checked;
   const fieldsEl = document.getElementById("cyclingFields");
@@ -513,8 +525,7 @@ function toggleCycling() {
     fieldsEl.classList.add("active");
   } else {
     fieldsEl.classList.remove("active");
-    document.getElementById("cyclingResult").style.display = "none";
-    document.getElementById("cyclingResult").textContent = "";
+    resetCyclingResult();
   }
 }
 
@@ -547,8 +558,7 @@ function resetForm() {
   togglePrecipitation();
   setResultCardState("");
   document.getElementById("result").textContent = "";
-  document.getElementById("cyclingResult").style.display = "none";
-  document.getElementById("cyclingResult").textContent = "";
+  resetCyclingResult();
   document.getElementById("formulaBadge").textContent = "";
   document.getElementById("envNotes").textContent = "";
   skipUnloadPrompt = true;
@@ -581,8 +591,7 @@ function calculate() {
 
   setResultCardState("");
   resultEl.textContent = "";
-  cyclingResultEl.style.display = "none";
-  cyclingResultEl.textContent = "";
+  resetCyclingResult();
   badgeEl.textContent = "";
   notesEl.textContent = "";
 
@@ -732,7 +741,9 @@ function calculate() {
     );
     const lowF = (Math.round(cToF(cyc.lowC) * 10) / 10).toFixed(1);
     const highF = (Math.round(cToF(cyc.highC) * 10) / 10).toFixed(1);
+    const cycMidC = (cyc.lowC + cyc.highC) / 2;
 
+    cyclingResultEl.className = getTempToneClass(cycMidC);
     cyclingResultEl.style.display = "flex";
     cyclingResultEl.innerHTML = `<span>騎行體感：約 ${cyc.lowC.toFixed(1)} °C ~ ${cyc.highC.toFixed(1)} °C</span><span class="temp-f-inline temp-f-cyc">(${lowF} °F ~ ${highF} °F)</span>`;
 
