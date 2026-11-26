@@ -24,8 +24,8 @@
   .three-col .col { flex:1; min-width:0; }
   .three-col label { margin-top:0; font-size:13px; white-space:nowrap; }
   .three-col select { width:100%; margin-top:2px; padding:4px 4px; border-radius:4px; border:1px solid #262626; background:#1a1a1a; color:#fff; font-size:13px; }
-  .field-hint { margin-top:4px; font-size:10.5px; color:#80858e; line-height:1.28; }
-  #precipitationContainer { margin-top:4px; }
+  .field-hint { margin-top:5px; font-size:10.5px; color:#80858e; line-height:1.28; }
+  #precipitationContainer { display:none; margin-top:4px; }
   #precipitationContainer label { margin-top:2px; font-size:13px; }
   #precipitationContainer select { padding:4px 6px; font-size:13px; border-radius:4px; border:1px solid #262626; background:#1a1a1a; color:#fff; }
   .btn-group { display:flex; gap:8px; margin-top:8px; }
@@ -91,13 +91,12 @@
   .note { margin-top:5px; font-size:10.5px; color:#737880; text-align:center; line-height:1.25; }
   details { margin-top:8px; font-size:10.5px; color:#8b919a; line-height:1.32; }
   summary { cursor:pointer; font-weight:bold; color:#a3a9b3; }
-  #precipitationContainer { display:none; }
   #version { position:absolute; top:6px; right:10px; font-size:12px; color:#777; }
   hr { border:0; border-top:1px solid #26292e; margin:7px 0; }
 </style>
 </head>
 <body>
-<div id="version">v2.2.3</div>
+<div id="version">v2.2.4</div>
 
 <h1>體感溫度計算機</h1>
 
@@ -194,12 +193,6 @@
   </div>
 </div>
 
-<div class="field-hint">
-  日照：清晨為日出前1hr~日出後1.5hr；傍晚為日落前0.5hr~日落後1hr。<br>
-  雲量：晴空(少雲，0～2成)；多雲(部分雲，3～7成)；陰天(厚/遮蔽，8～10成)。<br>
-  降水：毛毛 &lt;1、小1~3、中3~15、大15~40、豪≥40mm/hr(降雪至少 &lt; 10°C)。
-</div>
-
 <div id="precipitationContainer">
   <label id="precipLabel" for="precipIntensity">降雨強度:</label>
   <div class="input-row">
@@ -212,6 +205,12 @@
       <option value="extreme">豪（≥ 40 mm/hr）</option>
     </select>
   </div>
+</div>
+
+<div class="field-hint">
+  日照：清晨為日出前1hr~日出後1.5hr；傍晚為日落前0.5hr~日落後1hr。<br>
+  雲量：晴空(少雲，0～2成)；多雲(部分雲，3～7成)；陰天(厚/遮蔽，8～10成)。<br>
+  降水：毛毛 &lt;1、小1~3、中3~15、大15~40、豪≥40mm/hr(降雪至少 &lt; 10°C)。
 </div>
 
 <div class="btn-group">
